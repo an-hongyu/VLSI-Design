@@ -41,6 +41,8 @@
   .metric .v{font-size:clamp(22px,2.4vw,32px);font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:3px;line-height:1.25;white-space:nowrap}
   .metric .s{font-size:10px;color:#8b9aab;margin-top:3px}
   .plots{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:14px;align-items:stretch}
+  .plots > .card:first-child{display:flex;flex-direction:column}
+  .plots > .card:first-child .plot-wrap{flex:1;height:auto;min-height:390px}
   .signal-stack{display:grid;grid-template-rows:1fr 1fr;gap:14px;min-width:0}
   .signal-card{display:flex;flex-direction:column;gap:0}
   .signal-card .plot-wrap{height:clamp(150px,15vw,186px);flex:1;min-height:145px}
@@ -68,14 +70,15 @@
   .wide{grid-column:1/-1}
   .foot{font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
   .smallbtn{background:#edf3ff;color:#285da9;border:1px solid #cce0ff;padding:7px 10px;border-radius:8px;font-weight:700;font-size:11px}
-  @media(max-width:1050px){.frame{grid-template-columns:290px 1fr}.plots,.below{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plot-wrap{height:320px}.signal-card .plot-wrap{height:190px}}
-  @media(max-width:750px){.frame{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plots{grid-template-columns:1fr}.below{grid-template-columns:1fr}.panel{order:1}.main{order:2}.plot-wrap{height:290px}}
+  @media(max-width:1050px){.frame{grid-template-columns:290px 1fr}.plots,.below{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plot-wrap{height:320px}.plots > .card:first-child .plot-wrap{height:320px;min-height:320px}.signal-card .plot-wrap{height:190px}}
+  @media(max-width:750px){.frame{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plots{grid-template-columns:1fr}.below{grid-template-columns:1fr}.panel{order:1}.main{order:2}.plot-wrap{height:290px}.plots > .card:first-child .plot-wrap{height:290px;min-height:290px}}
   @media print {.top-actions,.presets{display:none} .frame{display:block}.panel{break-after:page}.card{break-inside:avoid}body{background:white}}
 </style>
+<link rel="stylesheet" href="mismatch-exercise.css">
 </head>
 <body>
 <header class="top">
-  <div><div class="kicker">VLSI DESIGN · LABORATORY 1</div><h1>CMOS Inverter: Sizing & Switching</h1><div class="tagline">Adjust transistor sizing and see how the beta ratio, VTC, input, and output change. No external output load.</div></div>
+  <div><div class="kicker">VLSI DESIGN · LABORATORY 1</div><h1>CMOS Inverter: Sizing, Noise Margins & Delay</h1><div class="tagline">Change transistor sizing, predict mismatch consequences, and measure VTC, noise margins and intrinsic delay. No external load.</div></div>
   <div class="top-actions"><a class="action" style="text-decoration:none" href="../chapters/01-cmos-inverter.html">← Back to Chapter 1</a><button type="button" class="action" id="resetTop">↺ Reset</button><button type="button" class="action" id="fullScreen">⛶ Fullscreen</button></div>
 </header>
 <div class="frame">
@@ -105,22 +108,45 @@
     <div class="metric"><div class="k">NMOS strength β<sub>n</sub></div><div class="v" id="bnStat">1000</div><div class="s">μA/V² · pull-down</div></div>
     <div class="metric"><div class="k">PMOS strength β<sub>p</sub></div><div class="v" id="bpStat">1000</div><div class="s">μA/V² · pull-up</div></div>
   </section>
+  <section class="card diagnostics" aria-label="Critical sizing metrics">
+    <div class="head-row"><h2>2. Critical parameters — what changes under mismatch?</h2><span class="pill">Live estimates</span></div>
+    <p class="intro"><b>VIL</b> and <b>VIH</b> are the VTC input points at slope −1. <b>NML</b> = VIL − VOL and <b>NMH</b> = VOH − VIH. The 50%-crossing delays use only <b>illustrative intrinsic output capacitance</b>, with no external load.</p>
+    <div class="diagnostic-grid">
+      <div class="diagnostic"><div class="key">VIL — max input LOW</div><div class="number" id="vilMetric">—</div><div class="detail">VTC slope = −1</div></div>
+      <div class="diagnostic"><div class="key">VIH — min input HIGH</div><div class="number" id="vihMetric">—</div><div class="detail">VTC slope = −1</div></div>
+      <div class="diagnostic"><div class="key">NML — LOW noise margin</div><div class="number" id="nmlMetric">—</div><div class="detail">VIL − VOL</div></div>
+      <div class="diagnostic"><div class="key">NMH — HIGH noise margin</div><div class="number" id="nmhMetric">—</div><div class="detail">VOH − VIH</div></div>
+      <div class="diagnostic"><div class="key">tPLH — output rise</div><div class="number" id="tplhMetric">—</div><div class="detail">Ideal step, 50% output</div></div>
+      <div class="diagnostic"><div class="key">tPHL — output fall</div><div class="number" id="tphlMetric">—</div><div class="detail">Ideal step, 50% output</div></div>
+    </div>
+    <div class="scenario">
+      <div><h3 style="font-size:13px;margin:8px 0 6px">Balanced reference vs. your design</h3>
+        <table class="compare-table"><thead><tr><th>Parameter</th><th>Balanced default</th><th>Your design</th><th>Δ</th></tr></thead><tbody>
+          <tr><td>VM</td><td id="comparison-vm-base"></td><td id="comparison-vm-now"></td><td id="comparison-vm-delta"></td></tr>
+          <tr><td>NML</td><td id="comparison-nml-base"></td><td id="comparison-nml-now"></td><td id="comparison-nml-delta"></td></tr>
+          <tr><td>NMH</td><td id="comparison-nmh-base"></td><td id="comparison-nmh-now"></td><td id="comparison-nmh-delta"></td></tr>
+          <tr><td>tPLH</td><td id="comparison-tplh-base"></td><td id="comparison-tplh-now"></td><td id="comparison-tplh-delta"></td></tr>
+          <tr><td>tPHL</td><td id="comparison-tphl-base"></td><td id="comparison-tphl-now"></td><td id="comparison-tphl-delta"></td></tr>
+        </tbody></table></div>
+      <div class="scenario-note"><b>Live interpretation</b><p id="currentInference">Changing sizing updates the comparison.</p><p style="margin-bottom:0">Estimated internal node capacitance: <b id="capEstimate">—</b> (computed, not a control). <b>No external load</b>. This exercise studies <i>drive-strength imbalance</i> (βp/βn ≠ 1), not a stochastic transistor-mismatch distribution.</p></div>
+    </div>
+  </section>
   <section class="plots">
     <div class="card">
-      <div class="head-row"><h2>2. Voltage-Transfer Characteristic</h2><span class="pill">DC simulation</span></div>
+      <div class="head-row"><h2>3. Voltage-Transfer Characteristic</h2><span class="pill">DC simulation</span></div>
       <p class="subtitle">How V<sub>out</sub> depends on a slowly swept V<sub>in</sub>.</p>
       <div class="plot-wrap"><canvas id="vtcPlot" aria-label="Voltage transfer characteristic graph" role="img"></canvas></div>
       <div class="legend"><span><i class="dot" style="background:var(--teal)"></i>VTC</span><span><i class="dot" style="background:#96a5b9"></i>V<sub>out</sub> = V<sub>in</sub></span><span><i class="dot" style="background:var(--orange)"></i>Switching point</span></div>
     </div>
     <div class="signal-stack" aria-label="Separate time-domain voltage plots">
       <div class="card signal-card input-card">
-        <div class="head-row"><h2>3A. Input Voltage · V<sub>in</sub></h2><span class="pill">Fixed test pattern</span></div>
+        <div class="head-row"><h2>4A. Input Voltage · V<sub>in</sub></h2><span class="pill">Fixed test pattern</span></div>
         <p class="subtitle">Input waveform: fixed trapezoidal transitions, independent of device sizing.</p>
         <div class="plot-wrap"><canvas id="inputPlot" aria-label="Input voltage Vin versus normalized time" role="img"></canvas></div>
         <div class="legend"><span><i class="dot" style="background:var(--blue)"></i>V<sub>in</sub></span><span><i class="dot" style="background:var(--teal)"></i>Switching threshold V<sub>M</sub></span></div>
       </div>
       <div class="card signal-card output-card">
-        <div class="head-row"><h2>3B. Output Voltage · V<sub>out</sub></h2><span class="pill">Open-circuit output</span></div>
+        <div class="head-row"><h2>4B. Output Voltage · V<sub>out</sub></h2><span class="pill">Open-circuit output</span></div>
         <p class="subtitle">Unloaded quasi-static output: V<sub>out</sub> follows the DC inverter characteristic.</p>
         <div class="plot-wrap"><canvas id="outputPlot" aria-label="Output voltage Vout versus normalized time" role="img"></canvas></div>
         <div class="legend"><span><i class="dot" style="background:var(--orange)"></i>V<sub>out</sub></span><span>Input HIGH → output LOW; input LOW → output HIGH</span></div>
@@ -128,10 +154,32 @@
     </div>
   </section>
   <section class="below">
-    <div class="finding"><h3>4. What should students notice?</h3><p id="finding">A balanced beta ratio places the switching point near VDD/2. The output inverts the input.</p></div>
+    <div class="finding"><h3>5. What should students notice?</h3><p id="finding">A balanced beta ratio places the switching point near VDD/2. The output inverts the input.</p></div>
     <div class="model"><h3>Model equations</h3><div class="math">β = μC<sub>ox</sub>(W / L)</div><div class="math">β<sub>p</sub>/β<sub>n</sub> = (μ<sub>p</sub>C<sub>ox</sub>W<sub>p</sub>)/(μ<sub>n</sub>C<sub>ox</sub>W<sub>n</sub>)</div><div class="math">I<sub>n</sub>(V<sub>in</sub>,V<sub>out</sub>) = I<sub>p</sub>(V<sub>in</sub>,V<sub>out</sub>)</div><p>Equal channel lengths are assumed for the ratio. DC current balance determines the ideal open-circuit output voltage.</p></div>
   </section>
-  <div class="foot"><b>Model scope:</b> Open-circuit means <b>no externally connected load</b> (not zero intrinsic capacitance). The displayed input pattern is fixed and the output is mapped quasi-statically through a long-channel square-law DC model (λ = 0.06 V⁻¹). No switching frequency, load capacitance, real-time propagation delay, parasitic capacitance, or energy is calculated. An actual open-circuit output still has intrinsic parasitic capacitance and finite delay. This is an educational model, not SPICE or silicon measurements.</div>
+  <section class="card step-section" aria-label="Transient response and delay comparison">
+    <div class="head-row"><h2>6. How does mismatch affect output delay?</h2><span class="pill">Estimated intrinsic transient</span></div>
+    <p class="intro">Apply an <b>ideal input voltage step</b> (the same for both designs) and compare unloaded output responses. A narrower PMOS charges Vout more slowly; increased transistor width can also increase intrinsic node capacitance.</p>
+    <div class="step-grid">
+      <div class="step-panel"><h3>Output LOW → HIGH: tPLH</h3><p class="caption">Input makes a HIGH → LOW step; PMOS charges Vout.</p><canvas id="riseResponse" role="img" aria-label="Output rising transient comparing selected and balanced inverter"></canvas></div>
+      <div class="step-panel"><h3>Output HIGH → LOW: tPHL</h3><p class="caption">Input makes a LOW → HIGH step; NMOS discharges Vout.</p><canvas id="fallResponse" role="img" aria-label="Output falling transient comparing selected and balanced inverter"></canvas></div>
+    </div>
+    <div class="step-legend"><span><i class="legend-line"></i>Your current sizing</span><span><i class="legend-line reference"></i>Balanced default</span><span>Horizontal guide: 50% output level</span></div>
+    <div class="method-note"><b>Method:</b> tPLH and tPHL are numerical solutions of t = ∫Cint / |ID(Vout)| dV from rail to half-supply for a <b>step input</b>. In this teaching example Cint = [0.8 + 0.85 × (Wp + Wn)] fF, with widths in μm, chosen solely to illustrate geometry-dependent drain/wiring parasitics. It is not a calibrated process parameter. The separate input/output plots above remain a <b>quasi-static VTC demonstration</b> for the fixed input pattern, so do not read picosecond delay directly from those normalized-time plots.</div>
+  </section>
+  <section class="card quiz-section" aria-label="Interactive quiz">
+    <div class="head-row"><h2>7. Predict → Test → Explain: five classroom questions</h2><span class="pill" id="quizProgress">0 of 5 correct</span></div>
+    <p class="intro">Begin with the <b>Balanced</b> preset (Wp = 1.8 μm), predict the answer, then choose <b>Weak PMOS</b> (Wp = 0.9 μm) to check the live values. Click one answer per question for instant feedback.</p>
+    <div class="quiz-grid">
+      <div class="question" data-q="shift"><div class="question-label">Q1 · Switching point</div><h3>If Wp is halved while Wn stays fixed, which way does VM move?</h3><div class="answers"><button class="answer" data-question="shift" data-choice="left">Left (below VDD/2)</button><button class="answer" data-question="shift" data-choice="right">Right (above VDD/2)</button><button class="answer" data-question="shift" data-choice="same">It does not move</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="margin"><div class="question-label">Q2 · Noise immunity</div><h3>For weaker PMOS drive, which noise margin shrinks in our example?</h3><div class="answers"><button class="answer" data-question="margin" data-choice="nml">NML — the LOW-input noise margin</button><button class="answer" data-question="margin" data-choice="nmh">NMH — the HIGH-input noise margin</button><button class="answer" data-question="margin" data-choice="none">Neither changes</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="delay"><div class="question-label">Q3 · Propagation delay</div><h3>When Wp decreases, which 50%-output step delay becomes longer?</h3><div class="answers"><button class="answer" data-question="delay" data-choice="tplh">tPLH — LOW to HIGH output</button><button class="answer" data-question="delay" data-choice="tphl">tPHL — HIGH to LOW output</button><button class="answer" data-question="delay" data-choice="none">Neither: output has no load</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="noise"><div class="question-label">Q4 · Noise vs. margin</div><h3>Does beta-ratio imbalance itself add random electrical noise?</h3><div class="answers"><button class="answer" data-question="noise" data-choice="yes">Yes, noise power increases automatically</button><button class="answer" data-question="noise" data-choice="no">No; it changes noise margins / immunity</button><button class="answer" data-question="noise" data-choice="noisy">Yes, only when NMOS is stronger</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="open"><div class="question-label">Q5 · Open circuit</div><h3>With no external output capacitor, should propagation delay be zero?</h3><div class="answers"><button class="answer" data-question="open" data-choice="zero">Yes, there is no capacitance</button><button class="answer" data-question="open" data-choice="nonzero">No, intrinsic parasitics still exist</button><button class="answer" data-question="open" data-choice="random">No, because the inverter creates noise</button></div><p class="feedback" aria-live="polite"></p></div>
+    </div>
+    <div class="quiz-end"><b>Challenge:</b> Now select <b>Strong PMOS</b>. Predict which delay gets shorter, which noise margin becomes smaller, and whether VM increases or decreases. Record the live values before and after. <b>Remember:</b> transistor sizing trades switching thresholds, noise margin, intrinsic capacitance and timing.</div>
+  </section>
+  <div class="foot"><b>Model scope:</b> Open-circuit means <b>no externally connected load</b> (not zero intrinsic capacitance). The displayed input pattern is fixed and the output is mapped quasi-statically through a long-channel square-law DC model (λ = 0.06 V⁻¹). No frequency or external-load capacitance control is provided. The main Vin/Vout waveforms are quasi-static, while the separate ideal-step output plots estimate intrinsic delay from an explicitly assumed parasitic-capacitance model. No stochastic noise source, PDK-calibrated delays, or energy is simulated. Results are educational estimates, not SPICE or silicon measurements.</div>
 </main>
 </div>
 <script>
@@ -269,7 +317,7 @@
     $('bpStat').textContent=(p.bp*1e6).toFixed(0);
     const shift=p.vm-p.vdd/2;
     let comment= Math.abs(shift)<.008?'The switching point is close to VDD/2 (balanced).':shift<0?'The switching point shifts LEFT because pull-down is stronger around the transition.':'The switching point shifts RIGHT because pull-up is stronger around the transition.';
-    $('finding').textContent=comment+' The input pattern stays fixed as sizing changes, but the output flips when Vin crosses VM. No external output load or propagation delay is modeled.';
+    $('finding').textContent=comment+' The input pattern stays fixed as sizing changes, but the output flips when Vin crosses VM. The separate step-response section below estimates intrinsic delay, without an external load.';
     renderAll();
   }
   function renderAll(){
@@ -287,10 +335,12 @@
   }));
   $('resetTop').addEventListener('click',()=>{Object.entries(base).forEach(([k,v])=>$(k).value=v);update();});
   $('fullScreen').addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.();});
+  window.VLSI_LAB={read,simulate,currentN,currentP,staticOut,solveVM,base};
   window.addEventListener('resize',renderAll);
   if('ResizeObserver' in window){new ResizeObserver(renderAll).observe(document.querySelector('.plots'));}
   update();
 })();
 </script>
+<script src="mismatch-exercise.js"></script>
 </body>
 </html>

@@ -54,3 +54,11 @@ for name,count in [('fig-1-cmos-schematic.svg',2),('fig-2-pull-up-pull-down.svg'
         assert len(m.findall('./svg:path[@class="mos-channel"]',ns))==1
         assert len(m.findall('./svg:path[@class="mos-terminals"]',ns))==1
 print('PASS: standard pMOS/nMOS symbol counts and gate-bubble conventions')
+
+# Mismatch & noise/delay learning extension must load on the same lab page.
+assert 'mismatch-exercise.css' in lab and 'mismatch-exercise.js' in lab
+assert all(f'id="{x}"' in lab for x in ['nmlMetric','nmhMetric','vilMetric','vihMetric','tplhMetric','tphlMetric','riseResponse','fallResponse','quizProgress'])
+assert len(set(__import__('re').findall(r'data-q="([a-z]+)"', lab)))==5
+assert 'window.VLSI_LAB=' in lab
+for parent in [chapter,home]:assert 'vlsi-lab-height' in parent
+print('PASS: five interactive questions, noise-margins/delay panel, two output step-response plots, responsive embedded lab')

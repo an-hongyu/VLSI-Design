@@ -1,15 +1,19 @@
 name: Publish VLSI Design textbook
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: github-pages
   cancel-in-progress: false
+
 jobs:
   deploy:
     environment:
@@ -21,6 +25,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Validate HTML book
         run: python tests/test_book.py
+      - name: Verify CMOS mismatch model
+        run: node tests/test_lab_numeric.js
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload book

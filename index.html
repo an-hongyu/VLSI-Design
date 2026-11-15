@@ -5,4 +5,15 @@
 <h2 id="live-lab">Interactive CMOS Inverter — run it here</h2><p>Now the laboratory is <b>embedded directly on the homepage</b> as well as in Chapter 1. Try Weak PMOS, Balanced, and Strong PMOS; watch the switching threshold move, then compare the separate input and output voltage plots. No frequency or external capacitance sliders.</p>
 <div class="activity activity-expanded"><div class="activity-head"><h3>Live CMOS Inverter Sizing Lab</h3><a href="labs/cmos-inverter.html" target="_blank" rel="noopener">Open in its own tab ↗</a></div><iframe src="labs/cmos-inverter.html" loading="eager" title="Embedded live CMOS inverter lab" scrolling="yes" allowfullscreen></iframe></div>
 <h2>Upcoming chapters</h2><div class="columns"><div class="topic-card"><h3>02 · CMOS Logic Gates</h3><p>NAND, NOR, equivalent pull-up and pull-down networks, series/parallel sizing. Planned.</p></div><div class="topic-card"><h3>03 · Delay and Timing</h3><p>Equivalent resistance, internal and external capacitance, timing estimation and FO4. Planned.</p></div></div>
-<h2>References</h2><p>The CMOS inverter material draws on D. A. Neamen, <i>Microelectronics: Circuit Analysis and Design</i>, §16.3; R. J. Baker, <i>CMOS: Circuit Design, Layout, and Simulation</i>, Ch. 11; and N. H. E. Weste and D. M. Harris, <i>CMOS VLSI Design</i>, §2.5. The chapter contains full bibliographic details.</p><div class="footer">VLSI Design · Hongyu An · Original drawings and model-based experiments. <a href="chapters/01-cmos-inverter.html">Read full Chapter 1</a>.</div></section></main><aside class="page-toc"><div class="eyebrow">On this page</div><p class="muted" style="font-size:12px;padding-left:12px">The lab is embedded on this page; start with the book contents or jump to the live experiment.</p><a href="#live-lab">Live experiment</a></aside></div></body></html>
+<h2>References</h2><p>The CMOS inverter material draws on D. A. Neamen, <i>Microelectronics: Circuit Analysis and Design</i>, §16.3; R. J. Baker, <i>CMOS: Circuit Design, Layout, and Simulation</i>, Ch. 11; and N. H. E. Weste and D. M. Harris, <i>CMOS VLSI Design</i>, §2.5. The chapter contains full bibliographic details.</p><div class="footer">VLSI Design · Hongyu An · Original drawings and model-based experiments. <a href="chapters/01-cmos-inverter.html">Read full Chapter 1</a>.</div></section></main><aside class="page-toc"><div class="eyebrow">On this page</div><p class="muted" style="font-size:12px;padding-left:12px">The lab is embedded on this page; start with the book contents or jump to the live experiment.</p><a href="#live-lab">Live experiment</a></aside></div><script>
+// The embedded lab grows when its interactive measurement and quiz panels expand.
+window.addEventListener('message', function (event) {
+  if (event.origin !== window.location.origin || !event.data || event.data.type !== 'vlsi-lab-height') return;
+  document.querySelectorAll('iframe[src*="cmos-inverter.html"]').forEach(function (frame) {
+    if (event.source !== frame.contentWindow) return;
+    var height = Number(event.data.height);
+    if (Number.isFinite(height)) frame.style.height = Math.min(6000, Math.max(1000, height + 28)) + 'px';
+  });
+});
+</script>
+</body></html>
