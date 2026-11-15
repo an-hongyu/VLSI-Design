@@ -22,7 +22,7 @@
 <text x="52" y="65" class="title">Pull-up and pull-down operation</text>
 <text x="52" y="97" class="subtitle">Input LOW: PMOS pulls output HIGH     |     Input HIGH: NMOS pulls output LOW</text>
 
-<rect x="26" y="132" width="447" height="465" rx="14" fill="#fff" stroke="#dce7ee"/>
+<rect x="26" y="132" width="447" height="445" rx="14" fill="#fff" stroke="#dce7ee"/>
 <text x="45" y="169" class="word">Input LOW (0)</text><text x="45" y="194" class="small">P1 conducts; N1 blocks</text>
 <text x="187" y="209" class="rail">VDD</text>
 <path class="wire" d="M210 218 H250 M230 218 V237 M230 317 V365 M230 365 V415 M230 495 V540 M87 277 V455 M87 277 H182 M87 455 H200 M230 365 H346"/>
@@ -34,7 +34,7 @@
 <text x="277" y="284" class="small on">P1: ON</text>
 <text x="277" y="462" class="small off">N1: OFF</text>
 <path d="M271 296 V351" stroke="#008f80" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow-on)"/>
-<rect x="536" y="132" width="447" height="465" rx="14" fill="#fff" stroke="#dce7ee"/>
+<rect x="536" y="132" width="447" height="445" rx="14" fill="#fff" stroke="#dce7ee"/>
 <text x="555" y="169" class="word">Input HIGH (1)</text><text x="555" y="194" class="small">N1 conducts; P1 blocks</text>
 <text x="697" y="209" class="rail">VDD</text>
 <path class="wire" d="M720 218 H760 M740 218 V237 M740 317 V365 M740 365 V415 M740 495 V540 M597 277 V455 M597 277 H692 M597 455 H710 M740 365 H856"/>
@@ -46,8 +46,8 @@
 <text x="787" y="284" class="small off">P1: OFF</text>
 <text x="787" y="462" class="small on">N1: ON</text>
 <path d="M781 377 V520" stroke="#008f80" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow-on)"/>
-<rect x="45" y="602" width="435" height="27" rx="8" fill="#e6f7f2"/>
-<text x="60" y="621" fill="#00816d" font-family="Arial" font-size="15" font-weight="700">Pull-up path: VDD → PMOS → Vout</text>
-<rect x="555" y="602" width="435" height="27" rx="8" fill="#e6f7f2"/>
-<text x="570" y="621" fill="#00816d" font-family="Arial" font-size="15" font-weight="700">Pull-down path: Vout → NMOS → GND</text>
+<rect x="45" y="585" width="435" height="27" rx="8" fill="#e6f7f2"/>
+<text x="60" y="605" fill="#00816d" font-family="Arial" font-size="15" font-weight="700">Pull-up path: VDD → PMOS → Vout</text>
+<rect x="555" y="585" width="435" height="27" rx="8" fill="#e6f7f2"/>
+<text x="570" y="605" fill="#00816d" font-family="Arial" font-size="15" font-weight="700">Pull-down path: Vout → NMOS → GND</text>
 </svg>
