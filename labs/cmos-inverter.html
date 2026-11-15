@@ -150,22 +150,25 @@
         <p class="subtitle">Unloaded quasi-static output: V<sub>out</sub> follows the DC inverter characteristic.</p>
         <div class="plot-wrap"><canvas id="outputPlot" aria-label="Output voltage Vout versus normalized time" role="img"></canvas></div>
         <div class="legend"><span><i class="dot" style="background:var(--orange)"></i>V<sub>out</sub></span><span>Input HIGH → output LOW; input LOW → output HIGH</span></div>
+        <a class="delay-shortcut" href="#delay-measurement">↓ Measure propagation delay with two 50% cursors</a>
       </div>
     </div>
   </section>
-  <section class="below">
-    <div class="finding"><h3>5. What should students notice?</h3><p id="finding">A balanced beta ratio places the switching point near VDD/2. The output inverts the input.</p></div>
-    <div class="model"><h3>Model equations</h3><div class="math">β = μC<sub>ox</sub>(W / L)</div><div class="math">β<sub>p</sub>/β<sub>n</sub> = (μ<sub>p</sub>C<sub>ox</sub>W<sub>p</sub>)/(μ<sub>n</sub>C<sub>ox</sub>W<sub>n</sub>)</div><div class="math">I<sub>n</sub>(V<sub>in</sub>,V<sub>out</sub>) = I<sub>p</sub>(V<sub>in</sub>,V<sub>out</sub>)</div><p>Equal channel lengths are assumed for the ratio. DC current balance determines the ideal open-circuit output voltage.</p></div>
-  </section>
-  <section class="card step-section" aria-label="Transient response and delay comparison">
-    <div class="head-row"><h2>6. How does mismatch affect output delay?</h2><span class="pill">Estimated intrinsic transient</span></div>
-    <p class="intro">Apply an <b>ideal input voltage step</b> (the same for both designs) and compare unloaded output responses. A narrower PMOS charges Vout more slowly; increased transistor width can also increase intrinsic node capacitance.</p>
+  <section class="card step-section" id="delay-measurement" aria-label="Transient response and delay comparison">
+    <div class="head-row"><h2>5. Measure propagation delay with two 50% cursors</h2><span class="pill">Estimated intrinsic transient</span></div>
+    <p class="intro">This is the <b>actual delay measurement example</b> immediately below the normalized-time waveforms. Each scope plot overlays the <b>ideal input step (blue)</b>, <b>your output (green)</b>, and <b>balanced reference output (gray dashed)</b> on one time axis in picoseconds. Two vertical cursors measure the interval from <b>input 50% (A)</b> to <b>output 50% (B)</b>. Changing Wp or Wn updates both waveforms and the caliper distance.</p>
     <div class="step-grid">
-      <div class="step-panel"><h3>Output LOW → HIGH: tPLH</h3><p class="caption">Input makes a HIGH → LOW step; PMOS charges Vout.</p><canvas id="riseResponse" role="img" aria-label="Output rising transient comparing selected and balanced inverter"></canvas></div>
-      <div class="step-panel"><h3>Output HIGH → LOW: tPHL</h3><p class="caption">Input makes a LOW → HIGH step; NMOS discharges Vout.</p><canvas id="fallResponse" role="img" aria-label="Output falling transient comparing selected and balanced inverter"></canvas></div>
+      <div class="step-panel"><h3>Output LOW → HIGH: tPLH</h3><p class="caption">Input makes a HIGH → LOW step; PMOS charges Vout.</p><canvas id="riseResponse" role="img" aria-label="Oscilloscope input falling and output rising with two 50 percent delay cursors"></canvas>
+      <div class="cursor-readout"><div><span>Cursor A · input 50%</span><strong id="riseInputTime">—</strong></div><div><span>Cursor B · output 50%</span><strong id="riseOutputTime">—</strong></div><div class="delta"><span>B − A = tPLH</span><strong id="riseDelayValue">—</strong></div></div></div>
+      <div class="step-panel"><h3>Output HIGH → LOW: tPHL</h3><p class="caption">Input makes a LOW → HIGH step; NMOS discharges Vout.</p><canvas id="fallResponse" role="img" aria-label="Oscilloscope input rising and output falling with two 50 percent delay cursors"></canvas>
+      <div class="cursor-readout"><div><span>Cursor A · input 50%</span><strong id="fallInputTime">—</strong></div><div><span>Cursor B · output 50%</span><strong id="fallOutputTime">—</strong></div><div class="delta"><span>B − A = tPHL</span><strong id="fallDelayValue">—</strong></div></div></div>
     </div>
-    <div class="step-legend"><span><i class="legend-line"></i>Your current sizing</span><span><i class="legend-line reference"></i>Balanced default</span><span>Horizontal guide: 50% output level</span></div>
-    <div class="method-note"><b>Method:</b> tPLH and tPHL are numerical solutions of t = ∫Cint / |ID(Vout)| dV from rail to half-supply for a <b>step input</b>. In this teaching example Cint = [0.8 + 0.85 × (Wp + Wn)] fF, with widths in μm, chosen solely to illustrate geometry-dependent drain/wiring parasitics. It is not a calibrated process parameter. The separate input/output plots above remain a <b>quasi-static VTC demonstration</b> for the fixed input pattern, so do not read picosecond delay directly from those normalized-time plots.</div>
+    <div class="step-legend"><span><i class="legend-line input-line"></i>Input step</span><span><i class="legend-line"></i>Your output</span><span><i class="legend-line reference"></i>Balanced output</span><span><i class="legend-line cursor-line"></i>50% cursor</span></div>
+    <div class="method-note"><b>Method:</b> tPLH and tPHL are numerical solutions of t = ∫Cint / |ID(Vout)| dV from rail to half-supply for a <b>step input</b>. In this teaching example Cint = [0.8 + 0.85 × (Wp + Wn)] fF, with widths in μm, chosen solely to illustrate geometry-dependent drain/wiring parasitics. It is not a calibrated process parameter. Unlike the <b>normalized-time quasi-static plots</b> above, the step-response plots here use a physical <b>picosecond axis</b>. A marks the ideal step-input 50% crossing; B marks the modeled output 50% crossing. The propagation delay is B − A (not a cursor difference on the quasi-static plots).</div>
+  </section>
+  <section class="below">
+    <div class="finding"><h3>6. What should students notice?</h3><p id="finding">A balanced beta ratio places the switching point near VDD/2. The output inverts the input.</p></div>
+    <div class="model"><h3>Model equations</h3><div class="math">β = μC<sub>ox</sub>(W / L)</div><div class="math">β<sub>p</sub>/β<sub>n</sub> = (μ<sub>p</sub>C<sub>ox</sub>W<sub>p</sub>)/(μ<sub>n</sub>C<sub>ox</sub>W<sub>n</sub>)</div><div class="math">I<sub>n</sub>(V<sub>in</sub>,V<sub>out</sub>) = I<sub>p</sub>(V<sub>in</sub>,V<sub>out</sub>)</div><p>Equal channel lengths are assumed for the ratio. DC current balance determines the ideal open-circuit output voltage.</p></div>
   </section>
   <section class="card quiz-section" aria-label="Interactive quiz">
     <div class="head-row"><h2>7. Predict → Test → Explain: five classroom questions</h2><span class="pill" id="quizProgress">0 of 5 correct</span></div>

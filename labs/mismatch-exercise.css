@@ -22,7 +22,7 @@
 .step-panel{border:1px solid #dae6ef;border-radius:12px;padding:14px;min-width:0;background:#fcfefe}
 .step-panel h3{font-size:13px;margin:0 0 4px;color:#254356}
 .step-panel .caption{font-size:11px;color:#65788c;margin:0 0 7px}
-.step-panel canvas{width:100%;height:195px;display:block}
+.step-panel canvas{width:100%;height:250px;display:block}
 .step-legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:11px;color:#536b81;margin:12px 0 3px}
 .legend-line{width:19px;height:3px;background:#0b8b82;display:inline-block;vertical-align:middle;margin-right:5px}
 .legend-line.reference{background:repeating-linear-gradient(90deg,#99aabc 0 5px,transparent 5px 8px)}
@@ -46,3 +46,16 @@
 @media(max-width:1200px){.diagnostic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:850px){.scenario,.step-grid,.quiz-grid{grid-template-columns:1fr}.diagnostic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:540px){.diagnostic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.diagnostic .number{font-size:22px}.compare-table th,.compare-table td{padding:8px 5px;font-size:11px}}
+
+/* Scope-style 50% propagation-delay cursors. */
+.delay-shortcut{display:inline-flex;margin-top:7px;color:#0c7898;font-weight:750;font-size:11px;text-decoration:none;padding:7px 9px;border-radius:7px;background:#ebf6fa;border:1px solid #cde5ec}
+.delay-shortcut:hover{text-decoration:underline;background:#def0f7}
+.cursor-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:8px 0 2px}
+.cursor-readout>div{border:1px solid #e1e9f0;border-radius:7px;padding:9px 8px;min-width:0;background:#f7fafc}
+.cursor-readout span{display:block;font-size:10px;color:#5c7185;line-height:1.25;margin-bottom:4px;white-space:normal}
+.cursor-readout strong{display:block;font-size:clamp(12px,1.25vw,17px);color:#214454;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cursor-readout .delta{background:#fff5ed;border-color:#efd2b8}
+.cursor-readout .delta strong{color:#a64f22}
+.legend-line.input-line{background:repeating-linear-gradient(90deg,#2865d9 0 7px,transparent 7px 11px)}
+.legend-line.cursor-line{background:repeating-linear-gradient(90deg,#bd6d2f 0 3px,transparent 3px 7px)}
+@media(max-width:490px){.cursor-readout{grid-template-columns:1fr 1fr}.cursor-readout .delta{grid-column:span 2;text-align:center}}

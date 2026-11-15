@@ -62,3 +62,11 @@ assert len(set(__import__('re').findall(r'data-q="([a-z]+)"', lab)))==5
 assert 'window.VLSI_LAB=' in lab
 for parent in [chapter,home]:assert 'vlsi-lab-height' in parent
 print('PASS: five interactive questions, noise-margins/delay panel, two output step-response plots, responsive embedded lab')
+
+# Oscilloscope-style delay cursors must sit immediately after the paired waveforms.
+assert 'id="delay-measurement"' in lab
+assert lab.index('id="outputPlot"') < lab.index('id="delay-measurement"') < lab.index('6. What should students notice?')
+assert all(f'id="{name}"' in lab for name in ['riseInputTime','riseOutputTime','riseDelayValue','fallInputTime','fallOutputTime','fallDelayValue'])
+cursor=(ROOT/'labs'/'mismatch-exercise.js').read_text(encoding='utf8')
+assert all(token in cursor for token in ['const tInput=','const tOutput=tInput+selectedDelay','c.lineTo(xb,arrowY)','riseCursor','fallCursor'])
+print('PASS: two 50%-voltage cursors, delay-arrow measurement and readouts in both delay plots')

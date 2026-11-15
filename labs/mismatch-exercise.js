@@ -76,42 +76,79 @@
     return out;
   }
   function drawStep(canvas,which,p,m){
-    const bResp=response(baseline,which),pResp=response(p,which);
-    const r=canvas.getBoundingClientRect(),w=r.width,h=r.height;
+    // An ideal input STEP at tInput and an analog output response share a true ps axis.
+    // Cursor A marks input 50%, Cursor B marks output 50%. The arrow is their difference.
+    const baselineResponse=response(baseline,which);
+    const selectedResponse=response(p,which);
+    const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height;
     if(w<20||h<20)return;
     const dpr=window.devicePixelRatio||1;
     canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
     const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
-    const g={l:45,r:15,t:13,b:34},pw=w-g.l-g.r,ph=h-g.t-g.b;
-    const t50=Math.max(m.tplh,m.tphl,reference.tplh,reference.tphl);
-    const xMax=clamp(t50*3.8,12,350);
-    const X=t=>g.l+Math.min(1,t/xMax)*pw,Y=v=>g.t+(1-v)*ph;
-    c.font='10px system-ui, sans-serif';c.fillStyle='#7a8a9b';
+    const g={l:53,r:13,t:59,b:38},pw=w-g.l-g.r,ph=h-g.t-g.b;
+    const selectedDelay=which==='rise'?m.tplh:m.tphl;
+    const referenceDelay=which==='rise'?reference.tplh:reference.tphl;
+    const xMax=Math.max(12,3.4*Math.max(selectedDelay,referenceDelay));
+    const tInput=0.15*xMax;
+    const tOutput=tInput+selectedDelay;
+    const X=t=>g.l+clamp(t/xMax,0,1)*pw;
+    const Y=v=>g.t+(1-v)*ph;
+    const initOutput=which==='rise'?0:1;
+    const finalOutput=1-initOutput;
+    const initInput=finalOutput; // Inverter: Vin is opposite to Vout
+    const finalInput=initOutput;
+    c.font='10px system-ui, sans-serif';c.fillStyle='#74889b';
     for(let i=0;i<=4;i++){
-      const vt=i/4,y=Y(vt),tx=i*xMax/4,x=X(tx);
-      c.strokeStyle='#e6edf2';c.lineWidth=1;c.beginPath();c.moveTo(g.l,y);c.lineTo(w-g.r,y);c.stroke();
-      c.textAlign='right';c.fillText(vt.toFixed(2),g.l-7,y+3);
+      const v=i/4,y=Y(v),t=i*xMax/4,x=X(t);
+      c.strokeStyle='#e5edf3';c.lineWidth=1;
+      c.beginPath();c.moveTo(g.l,y);c.lineTo(w-g.r,y);c.stroke();
+      c.textAlign='right';c.fillStyle='#718398';c.fillText(v.toFixed(2),g.l-7,y+3);
       c.beginPath();c.moveTo(x,g.t);c.lineTo(x,h-g.b);c.stroke();
-      c.textAlign='center';c.fillText(tx.toFixed(1),x,h-g.b+15);
+      c.textAlign='center';c.fillText(t.toFixed(1),x,h-g.b+15);
     }
-    c.textAlign='center';c.fillStyle='#60758a';c.fillText('Time after input step (ps)',g.l+pw/2,h-3);
-    c.save();c.translate(13,g.t+ph/2);c.rotate(-Math.PI/2);c.fillText('Vout/VDD',0,0);c.restore();
-    c.strokeStyle='#d1bc8d';c.setLineDash([4,4]);c.beginPath();c.moveTo(g.l,Y(.5));c.lineTo(w-g.r,Y(.5));c.stroke();c.setLineDash([]);
-    const draw=(points,color,dash,width)=>{
-      c.setLineDash(dash);c.strokeStyle=color;c.lineWidth=width;c.lineJoin='round';c.beginPath();
-      let begun=false;
-      for(const q of points){
-        if(q.t>xMax)break;
-        if(!begun){c.moveTo(X(q.t),Y(q.v));begun=true;}else c.lineTo(X(q.t),Y(q.v));
-      }
-      if(begun)c.stroke();c.setLineDash([]);
+    c.textAlign='center';c.fillStyle='#536c81';c.fillText('Time (ps) — ideal input step',g.l+pw/2,h-4);
+    c.save();c.translate(14,g.t+ph/2);c.rotate(-Math.PI/2);c.fillText('Voltage / VDD',0,0);c.restore();
+    const draw=(pts,color,dashes,thickness)=>{
+      c.save();c.beginPath();c.strokeStyle=color;c.lineWidth=thickness;
+      c.lineJoin='round';c.lineCap='round';c.setLineDash(dashes);
+      c.moveTo(X(0),Y(initOutput));c.lineTo(X(tInput),Y(initOutput));
+      for(const q of pts){const t=tInput+q.t;if(t>xMax)break;c.lineTo(X(t),Y(q.v));}
+      c.stroke();c.restore();
     };
-    draw(bResp,'#91a4b8',[5,5],2.5);
-    draw(pResp,'#078a83',[],3);
-    const crossing=which==='rise'?m.tplh:m.tphl;
-    c.fillStyle='#078a83';c.beginPath();c.arc(X(crossing),Y(.5),4,0,2*Math.PI);c.fill();
-    c.font='bold 11px system-ui,sans-serif';c.textAlign='left';
-    c.fillText(crossing.toFixed(2)+' ps',Math.min(X(crossing)+7,w-72),Math.max(Y(.5)-8,14));
+    draw(baselineResponse,'#a2adbd',[5,5],2);
+    draw(selectedResponse,'#087f78',[],2.9);
+    // Input step is overlaid in blue: it is NOT a static VTC curve.
+    c.beginPath();c.strokeStyle='#2865d9';c.lineWidth=2.5;c.setLineDash([7,3]);
+    c.moveTo(X(0),Y(initInput));c.lineTo(X(tInput),Y(initInput));
+    c.lineTo(X(tInput),Y(finalInput));c.lineTo(X(xMax),Y(finalInput));c.stroke();c.setLineDash([]);
+    // 50%-rail measurement horizontal line.
+    const mid=Y(.5);c.setLineDash([3,4]);c.lineWidth=1.2;c.strokeStyle='#b8a780';
+    c.beginPath();c.moveTo(g.l,mid);c.lineTo(w-g.r,mid);c.stroke();c.setLineDash([]);
+    const xa=X(tInput),xb=X(tOutput);
+    // Two independent timing cursors, from the top measurement bar to the voltage rails.
+    for(const [x,color] of [[xa,'#2865d9'],[xb,'#087f78']]){
+      c.beginPath();c.strokeStyle=color;c.lineWidth=1.35;c.setLineDash([4,4]);
+      c.moveTo(x,46);c.lineTo(x,h-g.b);c.stroke();c.setLineDash([]);
+      c.fillStyle='#fff';c.strokeStyle=color;c.lineWidth=2;c.beginPath();c.arc(x,mid,4.2,0,Math.PI*2);c.fill();c.stroke();
+    }
+    // Double-headed caliper from A=input 50% to B=output 50%.
+    const arrowY=42;
+    c.strokeStyle='#cb6c2e';c.fillStyle='#cb6c2e';c.lineWidth=2;
+    c.beginPath();c.moveTo(xa,arrowY);c.lineTo(xb,arrowY);c.stroke();
+    c.beginPath();c.moveTo(xa,arrowY);c.lineTo(xa+6,arrowY-3.7);c.lineTo(xa+6,arrowY+3.7);c.closePath();c.fill();
+    c.beginPath();c.moveTo(xb,arrowY);c.lineTo(xb-6,arrowY-3.7);c.lineTo(xb-6,arrowY+3.7);c.closePath();c.fill();
+    // Render label on a white capsule, independent of cursor spacing at small widths.
+    const label=(which==='rise'?'tPLH':'tPHL')+' = '+selectedDelay.toFixed(2)+' ps';
+    c.font='bold 11px system-ui, sans-serif';
+    const tw=c.measureText(label).width+17;
+    const center=clamp((xa+xb)/2,g.l+tw/2,w-g.r-tw/2);
+    c.fillStyle='#fff';c.strokeStyle='#f0d8be';c.lineWidth=1;
+    c.beginPath();c.roundRect(center-tw/2,8,tw,23,5);c.fill();c.stroke();
+    c.textAlign='center';c.fillStyle='#a64f22';c.fillText(label,center,23);
+    c.font='bold 10px system-ui, sans-serif';
+    c.fillStyle='#2865d9';c.textAlign='left';c.fillText('A',xa+5,55);
+    c.fillStyle='#087f78';c.textAlign='right';c.fillText('B',xb-5,55);
+    return {input:tInput,output:tOutput,delay:selectedDelay};
   }
   function fill(id,value){const el=$(id);if(el)el.textContent=value;}
   function update(){
@@ -130,7 +167,10 @@
     const direction=p.vm<baseline.vm-.01?'left':p.vm>baseline.vm+.01?'right':'near center';
     const caution=m.nml<m.nmh?'LOW-level noise margin is smaller':m.nmh<m.nml?'HIGH-level noise margin is smaller':'noise margins are almost equal';
     fill('currentInference',`At this sizing, βp/βn = ${p.ratio.toFixed(2)}, VM = ${p.vm.toFixed(3)} V (${direction} relative to the default balanced design), and ${caution}. The estimated 50%-level output delays are tPLH = ${m.tplh.toFixed(2)} ps and tPHL = ${m.tphl.toFixed(2)} ps, with no external load.`);
-    drawStep($('riseResponse'),'rise',p,m);drawStep($('fallResponse'),'fall',p,m);
+    const riseCursor=drawStep($('riseResponse'),'rise',p,m);
+    const fallCursor=drawStep($('fallResponse'),'fall',p,m);
+    if(riseCursor){fill('riseInputTime',riseCursor.input.toFixed(2)+' ps');fill('riseOutputTime',riseCursor.output.toFixed(2)+' ps');fill('riseDelayValue',riseCursor.delay.toFixed(2)+' ps');}
+    if(fallCursor){fill('fallInputTime',fallCursor.input.toFixed(2)+' ps');fill('fallOutputTime',fallCursor.output.toFixed(2)+' ps');fill('fallDelayValue',fallCursor.delay.toFixed(2)+' ps');}
     window.VLSI_STUDY.latest={...m,vm:p.vm,ratio:p.ratio};
     postHeight();
   }
