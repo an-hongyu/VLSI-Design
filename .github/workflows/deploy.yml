@@ -1,0 +1,32 @@
+name: Publish VLSI Design textbook
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Validate HTML book
+        run: python tests/test_book.py
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload book
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
