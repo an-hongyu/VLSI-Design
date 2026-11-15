@@ -1,24 +1,40 @@
+"""No-dependency smoke tests for VLSI Design's static textbook and lab."""
 from pathlib import Path
 from html.parser import HTMLParser
+from xml.etree import ElementTree as ET
 ROOT=Path(__file__).resolve().parents[1]
 PAGES=[ROOT/'index.html',ROOT/'chapters'/'01-cmos-inverter.html',ROOT/'labs'/'cmos-inverter.html']
-class Links(HTMLParser):
- def __init__(self): super().__init__();self.links=[]
- def handle_starttag(self,tag,attrs):
-  d=dict(attrs)
-  if tag in ('a','link','iframe','script'):
-   x=d.get('href') or d.get('src')
-   if x:self.links.append(x)
+class Reader(HTMLParser):
+    def __init__(self):super().__init__();self.links=[];self.ids=[]
+    def handle_starttag(self,tag,attrs):
+        d=dict(attrs)
+        if d.get('id'):self.ids.append(d['id'])
+        if tag in ('a','link','iframe','script','img'):
+            s=d.get('href') or d.get('src')
+            if s:self.links.append(s)
 for f in PAGES:
- assert f.exists(), f
- s=f.read_text(encoding='utf-8')
- assert '<!doctype html>' in s.lower()
- p=Links(); p.feed(s)
- for link in p.links:
-  if link.startswith(('http:','https:','#','mailto:','data:')):continue
-  assert (f.parent/link.split('#')[0]).exists(),f'{f}: broken link {link}'
-lab=PAGES[-1].read_text(encoding='utf-8')
-assert all(x in lab for x in ('id="inputPlot"','id="outputPlot"','id="vtcPlot"','function staticOut','function solveVM'))
+    assert f.exists(), f
+    s=f.read_text(encoding='utf8')
+    assert '<!doctype html>' in s.lower(),f
+    p=Reader();p.feed(s)
+    assert len(p.ids)==len(set(p.ids)),f'{f} duplicate IDs'
+    for link in p.links:
+        if link.startswith(('http:','https:','#','mailto:','data:')):continue
+        url=link.split('#')[0].split('?')[0]
+        assert (f.parent/url).exists(),f'{f} missing local resource {url}'
+    print(f.name,'links:',len(p.links),'ids:',len(p.ids))
+lab=PAGES[-1].read_text(encoding='utf8')
+assert all(x in lab for x in ['id="inputPlot"','id="outputPlot"','id="vtcPlot"','function staticOut','function solveVM'])
 assert 'id="frequency"' not in lab and 'id="capacitance"' not in lab
-assert 'no externally connected load' in lab
-print('PASS: HTML book and interactive CMOS inverter lab')
+assert 'no external output load' in lab.lower() or 'no externally connected load' in lab.lower()
+chapter=PAGES[1].read_text(encoding='utf8')
+home=PAGES[0].read_text(encoding='utf8')
+assert '1.6 Worked example' in chapter and '1.8 Interactive lab' in chapter
+assert 'data-copy=' in chapter and '<math display="block">' in chapter
+assert 'src="../labs/cmos-inverter.html"' in chapter
+assert 'src="labs/cmos-inverter.html"' in home
+assert 'id="live-lab"' in home
+figs=list((ROOT/'assets'/'figures').glob('*.svg'))
+assert len(figs)==5
+for fig in figs:ET.parse(fig)
+print('PASS: source-backed CMOS textbook with valid local links, original SVG figures, and inline interactive lab on home and chapter')
