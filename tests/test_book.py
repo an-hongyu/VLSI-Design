@@ -70,3 +70,10 @@ assert all(f'id="{name}"' in lab for name in ['riseInputTime','riseOutputTime','
 cursor=(ROOT/'labs'/'mismatch-exercise.js').read_text(encoding='utf8')
 assert all(token in cursor for token in ['const tInput=','const tOutput=tInput+selectedDelay','c.lineTo(xb,arrowY)','riseCursor','fallCursor'])
 print('PASS: two 50%-voltage cursors, delay-arrow measurement and readouts in both delay plots')
+
+# In-place propagation delay on the two stacked 4A / 4B plots.
+assert 'data-wave-edge="fall"' in lab and 'data-wave-edge="rise"' in lab
+assert all(name in lab for name in ['waveCursorA','waveCursorB','waveDelay','drawScopeCursors','waveTiming','psPerSequenceUnit'])
+assert 'position:sticky' in lab and 'id="designPanel"' in lab and 'id="openParams"' in lab
+assert 'No frequency or external-load capacitance control is provided' in lab
+print('PASS: aligned 4A/4B in-place delay measurement and persistent left-side controls')

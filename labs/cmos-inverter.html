@@ -18,7 +18,21 @@
   .action:hover{background:#ffffff22}
   .frame{max-width:1580px;padding:20px clamp(12px,2.3vw,32px) 34px;margin:0 auto;display:grid;grid-template-columns:minmax(275px,320px) minmax(0,1fr);gap:16px}
   .panel,.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 16px rgba(30,54,85,.035)}
-  .panel{padding:18px;align-self:start}
+  .panel{padding:18px;align-self:start;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;z-index:7;scrollbar-width:thin}
+  .panel:focus-within{box-shadow:0 5px 22px rgba(16,60,100,.13)}
+  .float-params,.close-params{display:none}
+  .timing-select{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0 11px;align-items:center}
+  .timing-select button{border:1px solid #bdd1e2;background:#f5f9fd;border-radius:8px;padding:8px 10px;font-weight:720;color:#3b5e78;font-size:11px}
+  .timing-select button[aria-pressed="true"]{background:#dff4f1;border-color:#54aea6;color:#006a67}
+  .scope-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 5px}
+  .scope-readout .readout-cell{border:1px solid #d7e4ed;background:#f8fbfd;border-radius:9px;padding:9px 10px;min-width:0}
+  .scope-readout small{display:block;font-size:10px;color:#667d90;letter-spacing:.01em;white-space:normal}
+  .scope-readout strong{display:block;font-size:17px;line-height:1.4;color:#183e57;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .scope-readout .readout-cell:last-child{border-color:#82c9c2;background:#eaf8f5}
+  .scope-readout .readout-cell:last-child strong{color:#00756c}
+  .scope-note{font-size:10.5px;color:#65778a;line-height:1.55;margin:6px 0 4px}
+  .is-embedded .panel{position:relative;top:auto;will-change:transform}
+
   .panel h2,.card h2{font-size:15px;margin:0;font-weight:750;letter-spacing:-.01em}
   .panel-intro{font-size:12px;color:var(--muted);margin:5px 0 16px}
   .control{margin-bottom:16px}
@@ -71,7 +85,14 @@
   .foot{font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
   .smallbtn{background:#edf3ff;color:#285da9;border:1px solid #cce0ff;padding:7px 10px;border-radius:8px;font-weight:700;font-size:11px}
   @media(max-width:1050px){.frame{grid-template-columns:290px 1fr}.plots,.below{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plot-wrap{height:320px}.plots > .card:first-child .plot-wrap{height:320px;min-height:320px}.signal-card .plot-wrap{height:190px}}
-  @media(max-width:750px){.frame{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plots{grid-template-columns:1fr}.below{grid-template-columns:1fr}.panel{order:1}.main{order:2}.plot-wrap{height:290px}.plots > .card:first-child .plot-wrap{height:290px;min-height:290px}}
+  @media(max-width:750px){
+    .float-params{display:block;position:fixed;left:10px;bottom:18px;background:#10516d;color:white;border:0;border-radius:12px;padding:13px 15px;box-shadow:0 5px 24px #102c4960;font-weight:780;font-size:12px;z-index:60}
+    .close-params{display:block;float:right;background:#eff5f8;border:1px solid #d3e1e8;border-radius:8px;padding:5px 8px;font-size:12px}
+    .panel,.is-embedded .panel{position:fixed;left:0;top:0;bottom:0;width:min(88vw,350px);height:100vh;max-height:100vh;overflow-y:auto;border-radius:0 18px 18px 0;z-index:75;transform:translateX(-110%);transition:transform .2s ease;box-shadow:0 12px 30px #152d4660}
+    .panel.panel-open,.is-embedded .panel.panel-open{transform:translateX(0)!important}
+    body.panel-open::after{content:"";position:fixed;inset:0;background:#10233e70;z-index:70}
+    .scope-readout{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.scope-readout .readout-cell{padding:7px 6px}.scope-readout strong{font-size:13px}
+    .frame{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plots{grid-template-columns:1fr}.below{grid-template-columns:1fr}.panel{order:1}.main{order:2}.plot-wrap{height:290px}.plots > .card:first-child .plot-wrap{height:290px;min-height:290px}}
   @media print {.top-actions,.presets{display:none} .frame{display:block}.panel{break-after:page}.card{break-inside:avoid}body{background:white}}
 </style>
 <link rel="stylesheet" href="mismatch-exercise.css">
@@ -82,7 +103,9 @@
   <div class="top-actions"><a class="action" style="text-decoration:none" href="../chapters/01-cmos-inverter.html">← Back to Chapter 1</a><button type="button" class="action" id="resetTop">↺ Reset</button><button type="button" class="action" id="fullScreen">⛶ Fullscreen</button></div>
 </header>
 <div class="frame">
-<aside class="panel">
+<button type="button" id="openParams" class="float-params" aria-expanded="false" aria-controls="designPanel">⚙ Design parameters</button>
+<aside class="panel" id="designPanel" aria-label="Adjustable design parameters">
+  <button type="button" class="close-params" id="closeParams" aria-label="Close design parameters">✕ Close</button>
   <h2>1. Design parameters</h2>
   <p class="panel-intro">Adjust the transistor geometry or operating conditions. All plots update automatically.</p>
   <div class="group-label">Transistor geometry</div>
@@ -141,22 +164,32 @@
     <div class="signal-stack" aria-label="Separate time-domain voltage plots">
       <div class="card signal-card input-card">
         <div class="head-row"><h2>4A. Input Voltage · V<sub>in</sub></h2><span class="pill">Fixed test pattern</span></div>
-        <p class="subtitle">Input waveform: fixed trapezoidal transitions, independent of device sizing.</p>
-        <div class="plot-wrap"><canvas id="inputPlot" aria-label="Input voltage Vin versus normalized time" role="img"></canvas></div>
+        <p class="subtitle">Fixed input test pattern; the two time cursors mark input and output 50% crossings on the same timeline.</p>
+        <div class="plot-wrap"><canvas id="inputPlot" aria-label="Input voltage Vin with aligned 50% delay cursors and picosecond time axis" role="img"></canvas></div>
         <div class="legend"><span><i class="dot" style="background:var(--blue)"></i>V<sub>in</sub></span><span><i class="dot" style="background:var(--teal)"></i>Switching threshold V<sub>M</sub></span></div>
       </div>
       <div class="card signal-card output-card">
         <div class="head-row"><h2>4B. Output Voltage · V<sub>out</sub></h2><span class="pill">Open-circuit output</span></div>
-        <p class="subtitle">Unloaded quasi-static output: V<sub>out</sub> follows the DC inverter characteristic.</p>
-        <div class="plot-wrap"><canvas id="outputPlot" aria-label="Output voltage Vout versus normalized time" role="img"></canvas></div>
+        <p class="subtitle">Unloaded transient output with intrinsic parasitic capacitance: the 50% crossing now occurs after the input cursor.</p>
+        <div class="plot-wrap"><canvas id="outputPlot" aria-label="Output transient voltage with aligned 50% delay cursors and picosecond time axis" role="img"></canvas></div>
         <div class="legend"><span><i class="dot" style="background:var(--orange)"></i>V<sub>out</sub></span><span>Input HIGH → output LOW; input LOW → output HIGH</span></div>
-        <a class="delay-shortcut" href="#delay-measurement">↓ Measure propagation delay with two 50% cursors</a>
+        <div class="timing-select" aria-label="Select the transition to measure">
+          <b style="font-size:11px;color:#536b7e">Measure on these graphs:</b>
+          <button type="button" data-wave-edge="fall" aria-pressed="true">Input ↑ → Output ↓ (tPHL)</button>
+          <button type="button" data-wave-edge="rise" aria-pressed="false">Input ↓ → Output ↑ (tPLH)</button>
+        </div>
+        <div class="scope-readout" aria-live="polite">
+          <div class="readout-cell"><small>Cursor A · Vin = 50%</small><strong id="waveCursorA">—</strong></div>
+          <div class="readout-cell"><small>Cursor B · Vout = 50%</small><strong id="waveCursorB">—</strong></div>
+          <div class="readout-cell"><small id="waveDelayName">Measured tPHL = B − A</small><strong id="waveDelay">—</strong></div>
+        </div>
+        <p class="scope-note">The dashed blue A and orange B vertical cursors are aligned across graphs 4A and 4B. The two-headed caliper marks the measured 50%-to-50% delay for the selected input ramp. The fixed test sequence uses 40 ps per original normalized-time unit (no frequency slider). Delay differs from an ideal-step result in Section 5 because the input here has finite rise/fall time.</p>
       </div>
     </div>
   </section>
   <section class="card step-section" id="delay-measurement" aria-label="Transient response and delay comparison">
     <div class="head-row"><h2>5. Measure propagation delay with two 50% cursors</h2><span class="pill">Estimated intrinsic transient</span></div>
-    <p class="intro">This is the <b>actual delay measurement example</b> immediately below the normalized-time waveforms. Each scope plot overlays the <b>ideal input step (blue)</b>, <b>your output (green)</b>, and <b>balanced reference output (gray dashed)</b> on one time axis in picoseconds. Two vertical cursors measure the interval from <b>input 50% (A)</b> to <b>output 50% (B)</b>. Changing Wp or Wn updates both waveforms and the caliper distance.</p>
+    <p class="intro">This is the <b>actual delay measurement example</b> as a complementary ideal-step comparison after the in-place 4A/4B delay measurement. Each scope plot overlays the <b>ideal input step (blue)</b>, <b>your output (green)</b>, and <b>balanced reference output (gray dashed)</b> on one time axis in picoseconds. Two vertical cursors measure the interval from <b>input 50% (A)</b> to <b>output 50% (B)</b>. Changing Wp or Wn updates both waveforms and the caliper distance.</p>
     <div class="step-grid">
       <div class="step-panel"><h3>Output LOW → HIGH: tPLH</h3><p class="caption">Input makes a HIGH → LOW step; PMOS charges Vout.</p><canvas id="riseResponse" role="img" aria-label="Oscilloscope input falling and output rising with two 50 percent delay cursors"></canvas>
       <div class="cursor-readout"><div><span>Cursor A · input 50%</span><strong id="riseInputTime">—</strong></div><div><span>Cursor B · output 50%</span><strong id="riseOutputTime">—</strong></div><div class="delta"><span>B − A = tPLH</span><strong id="riseDelayValue">—</strong></div></div></div>
@@ -164,7 +197,7 @@
       <div class="cursor-readout"><div><span>Cursor A · input 50%</span><strong id="fallInputTime">—</strong></div><div><span>Cursor B · output 50%</span><strong id="fallOutputTime">—</strong></div><div class="delta"><span>B − A = tPHL</span><strong id="fallDelayValue">—</strong></div></div></div>
     </div>
     <div class="step-legend"><span><i class="legend-line input-line"></i>Input step</span><span><i class="legend-line"></i>Your output</span><span><i class="legend-line reference"></i>Balanced output</span><span><i class="legend-line cursor-line"></i>50% cursor</span></div>
-    <div class="method-note"><b>Method:</b> tPLH and tPHL are numerical solutions of t = ∫Cint / |ID(Vout)| dV from rail to half-supply for a <b>step input</b>. In this teaching example Cint = [0.8 + 0.85 × (Wp + Wn)] fF, with widths in μm, chosen solely to illustrate geometry-dependent drain/wiring parasitics. It is not a calibrated process parameter. Unlike the <b>normalized-time quasi-static plots</b> above, the step-response plots here use a physical <b>picosecond axis</b>. A marks the ideal step-input 50% crossing; B marks the modeled output 50% crossing. The propagation delay is B − A (not a cursor difference on the quasi-static plots).</div>
+    <div class="method-note"><b>Method:</b> tPLH and tPHL are numerical solutions of t = ∫Cint / |ID(Vout)| dV from rail to half-supply for a <b>step input</b>. In this teaching example Cint = [0.8 + 0.85 × (Wp + Wn)] fF, with widths in μm, chosen solely to illustrate geometry-dependent drain/wiring parasitics. It is not a calibrated process parameter. The 4A/4B plots above also use a picosecond axis (40 ps per original normalized-time unit) but have finite ramp inputs, whereas these step-response plots use <b>ideal</b> input edges. A marks the ideal step-input 50% crossing; B marks the modeled output 50% crossing. The propagation delay is B − A; it differs from the 4A/4B measured delay because the input edge here is ideal, not finite-slew.</div>
   </section>
   <section class="below">
     <div class="finding"><h3>6. What should students notice?</h3><p id="finding">A balanced beta ratio places the switching point near VDD/2. The output inverts the input.</p></div>
@@ -182,7 +215,7 @@
     </div>
     <div class="quiz-end"><b>Challenge:</b> Now select <b>Strong PMOS</b>. Predict which delay gets shorter, which noise margin becomes smaller, and whether VM increases or decreases. Record the live values before and after. <b>Remember:</b> transistor sizing trades switching thresholds, noise margin, intrinsic capacitance and timing.</div>
   </section>
-  <div class="foot"><b>Model scope:</b> Open-circuit means <b>no externally connected load</b> (not zero intrinsic capacitance). The displayed input pattern is fixed and the output is mapped quasi-statically through a long-channel square-law DC model (λ = 0.06 V⁻¹). No frequency or external-load capacitance control is provided. The main Vin/Vout waveforms are quasi-static, while the separate ideal-step output plots estimate intrinsic delay from an explicitly assumed parasitic-capacitance model. No stochastic noise source, PDK-calibrated delays, or energy is simulated. Results are educational estimates, not SPICE or silicon measurements.</div>
+  <div class="foot"><b>Model scope:</b> Open-circuit means <b>no externally connected load</b> (not zero intrinsic capacitance). The displayed input pattern has a fixed illustrative timing scale (1 normalized unit = 40 ps). The time-domain output uses intrinsic Cint and numerically integrates (Ip − In)/Cint during the finite input ramp; the VTC uses the long-channel square-law DC model (λ = 0.06 V⁻¹). No frequency or external-load capacitance control is provided. The aligned main Vin/Vout waveforms now show finite input-slew propagation delay from 50% to 50%; the separate plots compare ideal-step intrinsic delays using the same illustrative capacitance model. No stochastic noise source, PDK-calibrated delays, or energy is simulated. Results are educational estimates, not SPICE or silicon measurements.</div>
 </main>
 </div>
 <script>
@@ -238,16 +271,48 @@
     if(q<.82)return p.vdd*(1-(q-.60)/.22);
     return 0;
   }
+  // Fixed input pattern timing for teaching: NOT a user-selectable frequency.
+  const psPerSequenceUnit=40;
+  const numWavePoints=1601;
+  const intrinsicCap=p=>(0.8+0.85*(p.wp+p.wn))*1e-15; // F; same teaching assumption as Section 5.
+  function firstCrossing(wave,key,level,direction,t0,t1){
+    for(let i=1;i<wave.length;i++){
+      const a=wave[i-1],b=wave[i];
+      if(a.t<t0||b.t>t1)continue;
+      const va=a[key]-level,vb=b[key]-level;
+      if((direction==='up' && va<0 && vb>=0)||(direction==='down' && va>0 && vb<=0)){
+        const fraction=va/(va-vb);
+        return a.t+(b.t-a.t)*fraction;
+      }
+    }
+    return NaN;
+  }
   function simulate(p){
     p.bn=p.mn*1e-6*(p.wn/p.length);
     p.bp=p.mp*1e-6*(p.wp/p.length);
     p.ratio=p.bp/p.bn;
     p.vm=solveVM(p);
     p.vtc=Array.from({length:501},(_,i)=>{const vin=p.vdd*i/500;return {x:vin,y:staticOut(vin,p)};});
-    p.wave=Array.from({length:1601},(_,i)=>{
-      const t=2*i/1600, vin=inputAt(t,p);
-      return {t,vin,vout:staticOut(vin,p)};
+    let vout=p.vdd;
+    const dtNorm=2/(numWavePoints-1),dtSeconds=dtNorm*psPerSequenceUnit*1e-12;
+    const cap=intrinsicCap(p);
+    p.wave=Array.from({length:numWavePoints},(_,i)=>{
+      const t=2*i/(numWavePoints-1);
+      if(i){
+        const vinMid=inputAt(t-dtNorm*.5,p);
+        const delta=(currentP(vinMid,vout,p)-currentN(vinMid,vout,p))*dtSeconds/cap;
+        vout=clamp(vout+delta,0,p.vdd);
+      }
+      return {t,vin:inputAt(t,p),vout};
     });
+    const half=p.vdd/2;
+    const fallA=firstCrossing(p.wave,'vin',half,'up',.12,.35);
+    const fallB=firstCrossing(p.wave,'vout',half,'down',.12,.53);
+    const riseA=firstCrossing(p.wave,'vin',half,'down',.60,.83);
+    const riseB=firstCrossing(p.wave,'vout',half,'up',.60,1.00);
+    p.waveTiming={fall:{a:fallA,b:fallB,delayPs:(fallB-fallA)*psPerSequenceUnit},
+                  rise:{a:riseA,b:riseB,delayPs:(riseB-riseA)*psPerSequenceUnit}};
+    p.waveTimingScale=psPerSequenceUnit;
     return p;
   }
   function plotCanvas(canvas,render){
@@ -257,6 +322,40 @@
     canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
     const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
     render(c,w,h);
+  }
+  let selectedWaveEdge='fall';
+  function drawScopeCursors(c,w,h,p,kind,X,Y,gap){
+    const m=p.waveTiming[selectedWaveEdge];
+    if(!m||!Number.isFinite(m.delayPs))return;
+    const xA=X(m.a,2),xB=X(m.b,2),y50=Y(p.vdd/2),top=gap.t,bottom=h-gap.b;
+    // The same two x positions appear in both vertically stacked graphs.
+    c.save();
+    c.setLineDash([4,4]);c.lineWidth=1.5;
+    for(const [x,color] of [[xA,'#2867c1'],[xB,'#db6a33']]){
+      c.strokeStyle=color;c.beginPath();c.moveTo(x,top);c.lineTo(x,bottom);c.stroke();
+    }
+    c.setLineDash([]);
+    c.font='bold 10px system-ui,sans-serif';c.textBaseline='middle';
+    const mt=kind==='input'?m.a:m.b;
+    c.fillStyle=kind==='input'?'#2867c1':'#db6a33';
+    c.beginPath();c.arc(X(mt,2),y50,4.5,0,Math.PI*2);c.fill();
+    // Avoid overlapping A/B labels when delay is just a few picoseconds.
+    c.fillStyle='#2867c1';c.textAlign='left';c.fillText('A',Math.max(gap.l+2,xA-16),top+10);
+    c.fillStyle='#db6a33';c.textAlign='right';c.fillText('B',Math.min(w-gap.r-2,xB+15),top+23);
+    if(kind==='output'){
+      const yArrow=top+35,left=Math.min(xA,xB),right=Math.max(xA,xB);
+      c.strokeStyle='#147c80';c.fillStyle='#147c80';c.lineWidth=2;
+      c.beginPath();c.moveTo(left,yArrow);c.lineTo(right,yArrow);c.stroke();
+      const length=6;
+      // Caliper arrow heads; handle reverse crossings as a valid signed interval.
+      c.beginPath();c.moveTo(left,yArrow);c.lineTo(left+length,yArrow-4);c.lineTo(left+length,yArrow+4);c.closePath();c.fill();
+      c.beginPath();c.moveTo(right,yArrow);c.lineTo(right-length,yArrow-4);c.lineTo(right-length,yArrow+4);c.closePath();c.fill();
+      const label=(selectedWaveEdge==='fall'?'tPHL':'tPLH')+' = '+m.delayPs.toFixed(2)+' ps';
+      const lbX=Math.min(w-gap.r-98,Math.max(gap.l+72,(xA+xB)/2));
+      c.font='bold 11px system-ui,sans-serif';c.fillStyle='#08756d';c.textAlign='center';
+      c.fillText(label,lbX,top+52);
+    }
+    c.restore();
   }
   function drawGraph(c,w,h,p,kind){
     const gap={l:48,r:15,t:17,b:39};
@@ -274,12 +373,12 @@
     for(let i=0;i<=4;i++){
       const v=xmax*i/4,xx=X(v,xmax);
       c.beginPath();c.moveTo(xx,gap.t);c.lineTo(xx,h-gap.b);c.strokeStyle='#edf1f6';c.stroke();
-      c.textAlign='center';c.fillStyle='#718097';c.fillText(kind==='vtc'?v.toFixed(2):v.toFixed(1),xx,h-gap.b+17);
+      c.textAlign='center';c.fillStyle='#718097';c.fillText(kind==='vtc'?v.toFixed(2):(v*psPerSequenceUnit).toFixed(0),xx,h-gap.b+17);
     }
     c.strokeStyle='#91a1b5';c.lineWidth=1.1;
     c.beginPath();c.moveTo(gap.l,gap.t);c.lineTo(gap.l,h-gap.b);c.lineTo(w-gap.r,h-gap.b);c.stroke();
     c.fillStyle='#415366';c.font='11px system-ui,sans-serif';c.textAlign='center';
-    c.fillText(kind==='vtc'?'Input voltage Vin (V)':'Normalized time',gap.l+pw/2,h-8);
+    c.fillText(kind==='vtc'?'Input voltage Vin (V)':'Time (ps; fixed input pattern)',gap.l+pw/2,h-8);
     c.save();c.translate(11,gap.t+ph/2);c.rotate(-Math.PI/2);c.fillText(kind==='vtc'?'Output voltage Vout (V)':kind==='input'?'Input Vin (V)':'Output Vout (V)',0,0);c.restore();
     function poly(arr,fieldX,fieldY,color,lineWidth=2.6,dash=[]){
       c.beginPath();c.setLineDash(dash);
@@ -301,10 +400,12 @@
       c.beginPath();c.moveTo(gap.l,yp);c.lineTo(w-gap.r,yp);c.stroke();c.setLineDash([]);
       c.fillStyle='#008f7b';c.font='bold 10px system-ui,sans-serif';c.textAlign='right';
       c.fillText('VM = '+p.vm.toFixed(3)+' V',w-gap.r-5,Math.max(15,yp-10));
+      drawScopeCursors(c,w,h,p,kind,X,Y,gap);
     }else if(kind==='output'){
       poly(p.wave,'t','vout','#dd6d34',2.8);
       c.setLineDash([4,5]);c.strokeStyle='#a9b6c6';c.lineWidth=1;
       c.beginPath();c.moveTo(gap.l,Y(p.vdd/2));c.lineTo(w-gap.r,Y(p.vdd/2));c.stroke();c.setLineDash([]);
+      drawScopeCursors(c,w,h,p,kind,X,Y,gap);
     }
   }
   function update(){
@@ -320,7 +421,12 @@
     $('bpStat').textContent=(p.bp*1e6).toFixed(0);
     const shift=p.vm-p.vdd/2;
     let comment= Math.abs(shift)<.008?'The switching point is close to VDD/2 (balanced).':shift<0?'The switching point shifts LEFT because pull-down is stronger around the transition.':'The switching point shifts RIGHT because pull-up is stronger around the transition.';
-    $('finding').textContent=comment+' The input pattern stays fixed as sizing changes, but the output flips when Vin crosses VM. The separate step-response section below estimates intrinsic delay, without an external load.';
+    $('finding').textContent=comment+' The aligned 50% cursors in graphs 4A/4B now measure finite-ramp propagation delay directly. The section below separately compares ideal-step intrinsic delay.';
+    const timing=p.waveTiming[selectedWaveEdge];
+    $('waveCursorA').textContent=Number.isFinite(timing.a)?(timing.a*psPerSequenceUnit).toFixed(2)+' ps':'—';
+    $('waveCursorB').textContent=Number.isFinite(timing.b)?(timing.b*psPerSequenceUnit).toFixed(2)+' ps':'—';
+    $('waveDelay').textContent=Number.isFinite(timing.delayPs)?timing.delayPs.toFixed(2)+' ps':'—';
+    $('waveDelayName').textContent=(selectedWaveEdge==='fall'?'Measured tPHL':'Measured tPLH')+' = B − A';
     renderAll();
   }
   function renderAll(){
@@ -329,6 +435,11 @@
     plotCanvas($('inputPlot'),(c,w,h)=>drawGraph(c,w,h,latest,'input'));
     plotCanvas($('outputPlot'),(c,w,h)=>drawGraph(c,w,h,latest,'output'));
   }
+  document.querySelectorAll('[data-wave-edge]').forEach(button=>button.addEventListener('click',()=>{
+    selectedWaveEdge=button.dataset.waveEdge;
+    document.querySelectorAll('[data-wave-edge]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+    update();
+  }));
   for(const k of ids)$(k).addEventListener('input',update);
   document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{
     const preset=b.dataset.preset; Object.entries(base).forEach(([k,v])=>$(k).value=v);
@@ -338,9 +449,54 @@
   }));
   $('resetTop').addEventListener('click',()=>{Object.entries(base).forEach(([k,v])=>$(k).value=v);update();});
   $('fullScreen').addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.();});
-  window.VLSI_LAB={read,simulate,currentN,currentP,staticOut,solveVM,base};
+  window.VLSI_LAB={read,simulate,currentN,currentP,staticOut,solveVM,base,psPerSequenceUnit};
   window.addEventListener('resize',renderAll);
-  if('ResizeObserver' in window){new ResizeObserver(renderAll).observe(document.querySelector('.plots'));}
+  // Desktop: keep settings visible during scrolling, including when this lab is embedded in the book.
+  let parentFrame=null;
+  if(window.parent!==window){
+    try{parentFrame=window.frameElement;if(parentFrame)document.body.classList.add('is-embedded');}catch(e){parentFrame=null;}
+  }
+  function followParent(){
+    if(!parentFrame)return;
+    try{
+      const panel=$('designPanel'),frame=document.querySelector('.frame');
+      const iframeBox=parentFrame.getBoundingClientRect();
+      if(window.innerWidth<=750){
+        // A full-height responsive iframe normally pins a fixed button to its far-off bottom.
+        // Place the mobile settings tab inside the visible section of the PARENT page instead.
+        const h=Math.min(window.parent.innerHeight-20,620);
+        const offset=clamp(window.parent.innerHeight-74-iframeBox.top,14,Math.max(14,iframeBox.height-66));
+        const button=$('openParams');
+        button.style.position='absolute';button.style.bottom='auto';button.style.top=offset.toFixed(0)+'px';
+        panel.style.position='absolute';
+        panel.style.top=clamp(14-iframeBox.top,0,Math.max(0,iframeBox.height-h)).toFixed(0)+'px';
+        panel.style.bottom='auto';panel.style.height=h.toFixed(0)+'px';panel.style.maxHeight=h.toFixed(0)+'px';
+        return;
+      }
+      $('openParams').removeAttribute('style');
+      panel.style.removeProperty('height');panel.style.removeProperty('max-height');panel.style.removeProperty('bottom');
+      panel.style.removeProperty('position');
+      const relativeTop=panel.offsetTop;
+      const desired=14-iframeBox.top-relativeTop;
+      const limit=Math.max(0,frame.offsetHeight-panel.offsetHeight-12);
+      panel.style.transform='translateY('+clamp(desired,0,limit).toFixed(0)+'px)';
+    }catch(e){}
+  }
+  if(parentFrame){
+    try{window.parent.addEventListener('scroll',followParent,{passive:true});window.parent.addEventListener('resize',followParent,{passive:true});}catch(e){}
+    window.addEventListener('resize',followParent,{passive:true});
+    requestAnimationFrame(followParent);
+  }
+  const designPanel=$('designPanel');
+  function toggleParams(open){
+    designPanel.classList.toggle('panel-open',open);
+    document.body.classList.toggle('panel-open',open);
+    $('openParams').setAttribute('aria-expanded',String(open));
+  }
+  $('openParams').addEventListener('click',()=>toggleParams(!designPanel.classList.contains('panel-open')));
+  $('closeParams').addEventListener('click',()=>toggleParams(false));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')toggleParams(false);});
+  if('ResizeObserver' in window){new ResizeObserver(()=>{renderAll();followParent();}).observe(document.querySelector('.plots'));}
   update();
 })();
 </script>
