@@ -1,3 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 920 452" role="img" aria-label="Original teaching diagram showing pull-up and pull-down paths">
-<defs><style>text{font-family:Inter,Arial,sans-serif;fill:#1e4054} .title{font-size:20px;font-weight:750} .sm{font-size:15px} .micro{font-size:12px} .bold{font-weight:750} .wire{fill:none;stroke:#244557;stroke-width:3;stroke-linecap:round;stroke-linejoin:round} .lightwire{fill:none;stroke:#a8bdc9;stroke-width:2.5;stroke-linecap:round} .rail{font-size:14px;font-weight:760;fill:#276e83} .device{fill:none;stroke:#196c88;stroke-width:3} .muted{fill:#7890a0} .red{fill:#d46538} .blue{fill:#1c7ab4} .teal{fill:#0f9888} </style></defs>
-<rect width="100%" height="100%" fill="#ffffff" /><rect x="20" y="22" width="425" height="410" rx="18" fill="#f8fbfd" stroke="#dce7ed"/><text x="47" y="61" class="title">Input LOW (0)</text><text x="47" y="88" class="sm muted">PMOS conducts; NMOS blocks</text><path class="wire" d="M234 122 V175 M234 221 V286 M234 330 V357"/><text x="218" y="109" class="rail">VDD</text><path d="M234 175 V221 M218 187 V209 M234 286 V330 M218 297 V318" class="device"/><circle cx="212" cy="198" r="5" fill="white" stroke="#196c88" stroke-width="2"/><path class="wire" d="M110 198 H206 M110 198 V308 H218 M234 264 H370"/><circle cx="234" cy="264" r="5" fill="#244557"/><text x="65" y="187" class="sm">Vin</text><text x="374" y="269" class="sm">Vout</text><text x="263" y="200" class="sm bold teal">PMOS ON</text><text x="263" y="309" class="sm bold red">NMOS OFF</text><path class="wire" d="M234 357 v7 m-22 0 h44 m-36 8 h28 m-20 8 h12"/><path d="M234 128 L234 245" stroke="#0e9c91" stroke-width="7" stroke-linecap="round"/><path d="M223 232 L234 249 L245 232" fill="none" stroke="#0e9c91" stroke-width="5"/><text x="50" y="406" class="sm bold teal">Pull-up: VDD → Vout</text><rect x="475" y="22" width="425" height="410" rx="18" fill="#f8fbfd" stroke="#dce7ed"/><text x="502" y="61" class="title">Input HIGH (1)</text><text x="502" y="88" class="sm muted">NMOS conducts; PMOS blocks</text><path class="wire" d="M689 122 V175 M689 221 V286 M689 330 V357"/><text x="673" y="109" class="rail">VDD</text><path d="M689 175 V221 M673 187 V209 M689 286 V330 M673 297 V318" class="device"/><circle cx="667" cy="198" r="5" fill="white" stroke="#196c88" stroke-width="2"/><path class="wire" d="M565 198 H661 M565 198 V308 H673 M689 264 H825"/><circle cx="689" cy="264" r="5" fill="#244557"/><text x="520" y="187" class="sm">Vin</text><text x="829" y="269" class="sm">Vout</text><text x="718" y="200" class="sm bold red">PMOS OFF</text><text x="718" y="309" class="sm bold teal">NMOS ON</text><path class="wire" d="M689 357 v7 m-22 0 h44 m-36 8 h28 m-20 8 h12"/><path d="M689 282 L689 343" stroke="#dd6a37" stroke-width="7" stroke-linecap="round"/><path d="M678 334 L689 350 L700 334" fill="none" stroke="#dd6a37" stroke-width="5"/><text x="505" y="406" class="sm bold red">Pull-down: Vout → GND</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 640" role="img" aria-label="Pull-up and pull-down operation">
+<defs><style>
+.t{font-family:Arial,Helvetica,sans-serif;fill:#18384a}
+.title{font-family:Arial,Helvetica,sans-serif;fill:#193c50;font-size:26px;font-weight:750}
+.subtitle{font-family:Arial,Helvetica,sans-serif;fill:#718798;font-size:17px}
+.word{font-family:Arial,Helvetica,sans-serif;fill:#284555;font-size:17px;font-weight:650}
+.pin{font-family:Arial,Helvetica,sans-serif;fill:#6c8494;font-size:13px;font-weight:650}
+.small{font-family:Arial,Helvetica,sans-serif;fill:#657f90;font-size:14px}
+.mini{font-family:Arial,Helvetica,sans-serif;fill:#8197a4;font-size:12px}
+.path-text{font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700}
+.wire{fill:none;stroke:#284555;stroke-width:3.5;stroke-linejoin:round;stroke-linecap:round}
+.ground{stroke:#284555;stroke-width:3.6;stroke-linecap:round}
+.rail{fill:#08758e;font-family:Arial,Helvetica,sans-serif;font-weight:750;font-size:17px}
+.on{fill:#00816d;font-family:Arial,Helvetica,sans-serif;font-weight:750}
+.off{fill:#c76b4f;font-family:Arial,Helvetica,sans-serif;font-weight:750}
+</style>
+<marker id="arrow-on" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#008f80" stroke-width="2"/></marker>
+<marker id="arrow-down" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#d66b42" stroke-width="2"/></marker>
+</defs>
+<rect width="1040" height="640" fill="#fff"/>
+<rect x="18" y="17" width="1004" height="606" rx="18" fill="#fbfdff" stroke="#dce7ee" stroke-width="2"/>
+<text x="52" y="65" class="title">Pull-up and pull-down operation</text>
+<text x="52" y="97" class="subtitle">Input LOW: PMOS pulls output HIGH     |     Input HIGH: NMOS pulls output LOW</text>
+
+<rect x="26" y="132" width="447" height="465" rx="14" fill="#fff" stroke="#dce7ee"/>
+<text x="45" y="169" class="word">Input LOW (0)</text><text x="45" y="194" class="small">P1 conducts; N1 blocks</text>
+<text x="187" y="209" class="rail">VDD</text>
+<path class="wire" d="M210 218 H250 M230 218 V237 M230 317 V365 M230 365 V415 M230 495 V540 M87 277 V455 M87 277 H182 M87 455 H200 M230 365 H346"/>
+<g data-device="pmos" data-schematic-symbol="enhancement-mosfet" transform="translate(230 277)"><path class="mos-channel" d="M0 -25 V25" fill="none" stroke="#078977" stroke-width="6" stroke-linecap="square"/><path class="mos-terminals" d="M0 -40 V-25 M0 25 V40" stroke="#284555" stroke-width="3.3" fill="none"/><path class="mos-gate" d="M-30 -28 V28" stroke="#164d65" stroke-width="4" fill="none"/><circle class="gate-bubble" cx="-40" cy="0" r="8" fill="#fff" stroke="#164d65" stroke-width="3"/></g>
+<g data-device="nmos" data-schematic-symbol="enhancement-mosfet" transform="translate(230 455)"><path class="mos-channel" d="M0 -25 V25" fill="none" stroke="#9fb2bd" stroke-width="6" stroke-linecap="square"/><path class="mos-terminals" d="M0 -40 V-25 M0 25 V40" stroke="#284555" stroke-width="3.3" fill="none"/><path class="mos-gate" d="M-30 -28 V28" stroke="#164d65" stroke-width="4" fill="none"/></g>
+<circle cx="87" cy="277" r="5.5" fill="#284555"/><circle cx="230" cy="365" r="5.5" fill="#284555"/><path class="ground" d="M201 540 H259 M210 551 H250 M221 562 H239"/>
+<text x="45" y="262" class="small">Vin = 0 V</text>
+<text x="353" y="371" class="small">Vout = VDD</text>
+<text x="277" y="284" class="small on">P1: ON</text>
+<text x="277" y="462" class="small off">N1: OFF</text>
+<path d="M271 296 V351" stroke="#008f80" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow-on)"/>
+<rect x="536" y="132" width="447" height="465" rx="14" fill="#fff" stroke="#dce7ee"/>
+<text x="555" y="169" class="word">Input HIGH (1)</text><text x="555" y="194" class="small">N1 conducts; P1 blocks</text>
+<text x="697" y="209" class="rail">VDD</text>
+<path class="wire" d="M720 218 H760 M740 218 V237 M740 317 V365 M740 365 V415 M740 495 V540 M597 277 V455 M597 277 H692 M597 455 H710 M740 365 H856"/>
+<g data-device="pmos" data-schematic-symbol="enhancement-mosfet" transform="translate(740 277)"><path class="mos-channel" d="M0 -25 V25" fill="none" stroke="#9fb2bd" stroke-width="6" stroke-linecap="square"/><path class="mos-terminals" d="M0 -40 V-25 M0 25 V40" stroke="#284555" stroke-width="3.3" fill="none"/><path class="mos-gate" d="M-30 -28 V28" stroke="#164d65" stroke-width="4" fill="none"/><circle class="gate-bubble" cx="-40" cy="0" r="8" fill="#fff" stroke="#164d65" stroke-width="3"/></g>
+<g data-device="nmos" data-schematic-symbol="enhancement-mosfet" transform="translate(740 455)"><path class="mos-channel" d="M0 -25 V25" fill="none" stroke="#078977" stroke-width="6" stroke-linecap="square"/><path class="mos-terminals" d="M0 -40 V-25 M0 25 V40" stroke="#284555" stroke-width="3.3" fill="none"/><path class="mos-gate" d="M-30 -28 V28" stroke="#164d65" stroke-width="4" fill="none"/></g>
+<circle cx="597" cy="277" r="5.5" fill="#284555"/><circle cx="740" cy="365" r="5.5" fill="#284555"/><path class="ground" d="M711 540 H769 M720 551 H760 M731 562 H749"/>
+<text x="555" y="262" class="small">Vin = VDD</text>
+<text x="863" y="371" class="small">Vout = 0 V</text>
+<text x="787" y="284" class="small off">P1: OFF</text>
+<text x="787" y="462" class="small on">N1: ON</text>
+<path d="M781 377 V520" stroke="#008f80" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow-on)"/>
+<rect x="45" y="602" width="435" height="27" rx="8" fill="#e6f7f2"/>
+<text x="60" y="621" fill="#00816d" font-family="Arial" font-size="15" font-weight="700">Pull-up path: VDD → PMOS → Vout</text>
+<rect x="555" y="602" width="435" height="27" rx="8" fill="#e6f7f2"/>
+<text x="570" y="621" fill="#00816d" font-family="Arial" font-size="15" font-weight="700">Pull-down path: Vout → NMOS → GND</text>
+</svg>

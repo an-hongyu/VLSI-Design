@@ -38,3 +38,19 @@ figs=list((ROOT/'assets'/'figures').glob('*.svg'))
 assert len(figs)==5
 for fig in figs:ET.parse(fig)
 print('PASS: source-backed CMOS textbook with valid local links, original SVG figures, and inline interactive lab on home and chapter')
+
+# Verify schematic semantics independently of the rendered appearance.
+ns={'svg':'http://www.w3.org/2000/svg'}
+for name,count in [('fig-1-cmos-schematic.svg',2),('fig-2-pull-up-pull-down.svg',4)]:
+    root=ET.parse(ROOT/'assets'/'figures'/name).getroot()
+    mos=root.findall('.//svg:g[@data-device]',ns)
+    assert len(mos)==count,(name,len(mos))
+    assert sum(x.get('data-device')=='pmos' for x in mos)==count//2
+    assert sum(x.get('data-device')=='nmos' for x in mos)==count//2
+    for m in mos:
+        bubbles=m.findall('./svg:circle[@class="gate-bubble"]',ns)
+        assert len(bubbles)==(1 if m.get('data-device')=='pmos' else 0)
+        assert len(m.findall('./svg:path[@class="mos-gate"]',ns))==1
+        assert len(m.findall('./svg:path[@class="mos-channel"]',ns))==1
+        assert len(m.findall('./svg:path[@class="mos-terminals"]',ns))==1
+print('PASS: standard pMOS/nMOS symbol counts and gate-bubble conventions')
