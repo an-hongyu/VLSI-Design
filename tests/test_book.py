@@ -1,7 +1,8 @@
-"""No-dependency smoke tests for VLSI Design's static textbook and lab."""
+"""Smoke tests for VLSI Design and the three-case inverter lesson."""
 from pathlib import Path
 from html.parser import HTMLParser
 from xml.etree import ElementTree as ET
+import re
 ROOT=Path(__file__).resolve().parents[1]
 PAGES=[ROOT/'index.html',ROOT/'chapters'/'01-cmos-inverter.html',ROOT/'labs'/'cmos-inverter.html']
 class Reader(HTMLParser):
@@ -13,7 +14,7 @@ class Reader(HTMLParser):
             s=d.get('href') or d.get('src')
             if s:self.links.append(s)
 for f in PAGES:
-    assert f.exists(), f
+    assert f.exists(),f
     s=f.read_text(encoding='utf8')
     assert '<!doctype html>' in s.lower(),f
     p=Reader();p.feed(s)
@@ -24,9 +25,12 @@ for f in PAGES:
         assert (f.parent/url).exists(),f'{f} missing local resource {url}'
     print(f.name,'links:',len(p.links),'ids:',len(p.ids))
 lab=PAGES[-1].read_text(encoding='utf8')
-assert all(x in lab for x in ['id="inputPlot"','id="outputPlot"','id="vtcPlot"','function staticOut','function solveVM'])
-assert 'id="frequency"' not in lab and 'id="capacitance"' not in lab
-assert 'no external output load' in lab.lower() or 'no externally connected load' in lab.lower()
+assert '<h1>Design of Inverters</h1>' in lab
+assert len(re.findall(r'<button\s+[^>]*data-case=',lab))==3
+assert all(x in lab for x in ['id="vtcChart"','id="noiseChart"','id="fallChart"','id="riseChart"','id="caseCards"','design-of-inverters.js'])
+assert 'type="range"' not in lab and 'quizProgress' not in lab
+assert 'No external output load' in lab or 'No external output load'.lower() in lab.lower() or 'no external output load' in lab.lower()
+assert (ROOT/'labs'/'cmos-inverter-advanced.html').exists()
 chapter=PAGES[1].read_text(encoding='utf8')
 home=PAGES[0].read_text(encoding='utf8')
 assert '1.6 Worked example' in chapter and '1.8 Interactive lab' in chapter
@@ -34,12 +38,10 @@ assert 'data-copy=' in chapter and '<math display="block">' in chapter
 assert 'src="../labs/cmos-inverter.html"' in chapter
 assert 'src="labs/cmos-inverter.html"' in home
 assert 'id="live-lab"' in home
+assert 'Design of Inverters' in chapter and 'Design of Inverters' in home
 figs=list((ROOT/'assets'/'figures').glob('*.svg'))
 assert len(figs)==5
 for fig in figs:ET.parse(fig)
-print('PASS: source-backed CMOS textbook with valid local links, original SVG figures, and inline interactive lab on home and chapter')
-
-# Verify schematic semantics independently of the rendered appearance.
 ns={'svg':'http://www.w3.org/2000/svg'}
 for name,count in [('fig-1-cmos-schematic.svg',2),('fig-2-pull-up-pull-down.svg',4)]:
     root=ET.parse(ROOT/'assets'/'figures'/name).getroot()
@@ -53,27 +55,5 @@ for name,count in [('fig-1-cmos-schematic.svg',2),('fig-2-pull-up-pull-down.svg'
         assert len(m.findall('./svg:path[@class="mos-gate"]',ns))==1
         assert len(m.findall('./svg:path[@class="mos-channel"]',ns))==1
         assert len(m.findall('./svg:path[@class="mos-terminals"]',ns))==1
-print('PASS: standard pMOS/nMOS symbol counts and gate-bubble conventions')
-
-# Mismatch & noise/delay learning extension must load on the same lab page.
-assert 'mismatch-exercise.css' in lab and 'mismatch-exercise.js' in lab
-assert all(f'id="{x}"' in lab for x in ['nmlMetric','nmhMetric','vilMetric','vihMetric','tplhMetric','tphlMetric','riseResponse','fallResponse','quizProgress'])
-assert len(set(__import__('re').findall(r'data-q="([a-z]+)"', lab)))==5
-assert 'window.VLSI_LAB=' in lab
 for parent in [chapter,home]:assert 'vlsi-lab-height' in parent
-print('PASS: five interactive questions, noise-margins/delay panel, two output step-response plots, responsive embedded lab')
-
-# Oscilloscope-style delay cursors must sit immediately after the paired waveforms.
-assert 'id="delay-measurement"' in lab
-assert lab.index('id="outputPlot"') < lab.index('id="delay-measurement"') < lab.index('6. What should students notice?')
-assert all(f'id="{name}"' in lab for name in ['riseInputTime','riseOutputTime','riseDelayValue','fallInputTime','fallOutputTime','fallDelayValue'])
-cursor=(ROOT/'labs'/'mismatch-exercise.js').read_text(encoding='utf8')
-assert all(token in cursor for token in ['const tInput=','const tOutput=tInput+selectedDelay','c.lineTo(xb,arrowY)','riseCursor','fallCursor'])
-print('PASS: two 50%-voltage cursors, delay-arrow measurement and readouts in both delay plots')
-
-# In-place propagation delay on the two stacked 4A / 4B plots.
-assert 'data-wave-edge="fall"' in lab and 'data-wave-edge="rise"' in lab
-assert all(name in lab for name in ['waveCursorA','waveCursorB','waveDelay','drawScopeCursors','waveTiming','psPerSequenceUnit'])
-assert 'position:sticky' in lab and 'id="designPanel"' in lab and 'id="openParams"' in lab
-assert 'No frequency or external-load capacitance control is provided' in lab
-print('PASS: aligned 4A/4B in-place delay measurement and persistent left-side controls')
+print('PASS: three buttons, three case formulas, three charts, accessible links, textbook schematics and responsive embed')

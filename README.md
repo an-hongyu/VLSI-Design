@@ -1,5 +1,7 @@
 # VLSI Design
 
+**Classroom mini-lecture demo:** [Design of Inverters](https://an-hongyu.github.io/VLSI-Design/labs/cmos-inverter.html) — three fixed PMOS widths, three graphical comparisons, and three fully worked case calculations. The previous slider-based version is preserved as `labs/cmos-inverter-advanced.html`.
+
 An open, interactive textbook on CMOS circuits and integrated-circuit design.
 
 **Author:** Hongyu An  

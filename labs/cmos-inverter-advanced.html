@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interactive CMOS Inverter Lab | VLSI Design</title>
+<style>
+  :root{--bg:#f3f6fa;--paper:#fff;--ink:#182536;--muted:#62738a;--line:#dce4ec;--blue:#2d6cdf;--orange:#dd6d34;--teal:#008f7b;--gold:#f0b544;--panel:#f8fafc}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.44}
+  .top{background:#101e31;color:white;padding:21px clamp(16px,3vw,40px);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .kicker{color:#79c9d4;text-transform:uppercase;font-size:11px;letter-spacing:.16em;font-weight:800;margin-bottom:3px}
+  h1{font-size:clamp(22px,2.5vw,34px);line-height:1.16;letter-spacing:-.035em;margin:0}
+  .tagline{font-size:13px;opacity:.75;margin-top:5px}
+  .top-actions{display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .action{border:1px solid #8b9aa9;color:#fff;background:transparent;border-radius:9px;padding:9px 12px;font-weight:650;font-size:12px}
+  .action:hover{background:#ffffff22}
+  .frame{max-width:1580px;padding:20px clamp(12px,2.3vw,32px) 34px;margin:0 auto;display:grid;grid-template-columns:minmax(275px,320px) minmax(0,1fr);gap:16px}
+  .panel,.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 16px rgba(30,54,85,.035)}
+  .panel{padding:18px;align-self:start;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;z-index:7;scrollbar-width:thin}
+  .panel:focus-within{box-shadow:0 5px 22px rgba(16,60,100,.13)}
+  .float-params,.close-params{display:none}
+  .timing-select{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0 11px;align-items:center}
+  .timing-select button{border:1px solid #bdd1e2;background:#f5f9fd;border-radius:8px;padding:8px 10px;font-weight:720;color:#3b5e78;font-size:11px}
+  .timing-select button[aria-pressed="true"]{background:#dff4f1;border-color:#54aea6;color:#006a67}
+  .scope-readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 5px}
+  .scope-readout .readout-cell{border:1px solid #d7e4ed;background:#f8fbfd;border-radius:9px;padding:9px 10px;min-width:0}
+  .scope-readout small{display:block;font-size:10px;color:#667d90;letter-spacing:.01em;white-space:normal}
+  .scope-readout strong{display:block;font-size:17px;line-height:1.4;color:#183e57;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .scope-readout .readout-cell:last-child{border-color:#82c9c2;background:#eaf8f5}
+  .scope-readout .readout-cell:last-child strong{color:#00756c}
+  .scope-note{font-size:10.5px;color:#65778a;line-height:1.55;margin:6px 0 4px}
+  .is-embedded .panel{position:relative;top:auto;will-change:transform}
+
+  .panel h2,.card h2{font-size:15px;margin:0;font-weight:750;letter-spacing:-.01em}
+  .panel-intro{font-size:12px;color:var(--muted);margin:5px 0 16px}
+  .control{margin-bottom:16px}
+  .control label{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:650;margin-bottom:7px;align-items:baseline}
+  .control output{font-variant-numeric:tabular-nums;color:var(--blue);font-weight:800;min-width:65px;text-align:right}
+  input[type=range]{display:block;width:100%;accent-color:var(--blue);cursor:pointer;touch-action:pan-y}
+  .range-label{font-size:10px;display:flex;justify-content:space-between;color:#8a98a8;margin-top:2px}
+  .group-label{text-transform:uppercase;letter-spacing:.11em;font-size:10px;color:#8390a3;font-weight:800;padding:12px 0 10px;border-top:1px solid var(--line);margin-top:4px}
+  .group-label:first-child{border-top:0;padding-top:0}
+  .presets{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+  .preset{border:1px solid #bed0e3;color:#28506c;border-radius:8px;padding:8px 10px;background:#f3f8fe;font-size:11px;font-weight:700}
+  .preset:hover{background:#e5f1fe}
+  details{font-size:12px}
+  details summary{cursor:pointer;font-weight:750;color:#344860;user-select:none;margin:2px 0 9px}
+  details[open] summary{margin-bottom:12px}
+  .main{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  .metric{padding:13px 15px;background:var(--paper);border:1px solid var(--line);border-radius:13px;min-width:0}
+  .metric .k{font-size:11px;color:var(--muted);font-weight:660;white-space:nowrap}
+  .metric .v{font-size:clamp(22px,2.4vw,32px);font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:3px;line-height:1.25;white-space:nowrap}
+  .metric .s{font-size:10px;color:#8b9aab;margin-top:3px}
+  .plots{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:14px;align-items:stretch}
+  .plots > .card:first-child{display:flex;flex-direction:column}
+  .plots > .card:first-child .plot-wrap{flex:1;height:auto;min-height:390px}
+  .signal-stack{display:grid;grid-template-rows:1fr 1fr;gap:14px;min-width:0}
+  .signal-card{display:flex;flex-direction:column;gap:0}
+  .signal-card .plot-wrap{height:clamp(150px,15vw,186px);flex:1;min-height:145px}
+  .signal-card .legend{margin-top:4px}
+  .signal-card.input-card{border-top:3px solid var(--blue)}
+  .signal-card.output-card{border-top:3px solid var(--orange)}
+  .card{padding:17px;min-width:0;position:relative}
+  .head-row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+  .pill{border-radius:22px;background:#edf5f3;color:#0d7b6b;padding:4px 8px;font-size:10px;font-weight:800;white-space:nowrap}
+  .subtitle{font-size:11px;color:var(--muted);margin:4px 0 8px}
+  .plot-wrap{height:clamp(395px,36vw,490px);position:relative}
+  canvas{display:block;width:100%;height:100%}
+  .legend{display:flex;align-items:center;gap:17px;flex-wrap:wrap;font-size:11px;color:#536476;margin:0 0 6px}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:100%;margin-right:5px}
+  .legend span{display:flex;align-items:center}
+  .osc-vals{display:flex;gap:11px;font-variant-numeric:tabular-nums;font-size:12px;margin:2px 0 4px}
+  .osc-vals b{font-size:13px}
+  .below{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+  .finding{background:#edf7f4;border:1px solid #d0e9e3;border-radius:12px;padding:14px}
+  .finding h3,.model h3{font-size:13px;margin:0 0 7px}
+  .finding p,.model p{font-size:12px;color:#3c5667;margin:0}
+  .model{padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  .math{font-family:Cambria,"STIX Two Text",Georgia,serif;color:#263c54;font-size:15px;margin:8px 0;overflow-wrap:anywhere}
+  .muted{font-size:11px;color:var(--muted)}
+  .wide{grid-column:1/-1}
+  .foot{font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+  .smallbtn{background:#edf3ff;color:#285da9;border:1px solid #cce0ff;padding:7px 10px;border-radius:8px;font-weight:700;font-size:11px}
+  @media(max-width:1050px){.frame{grid-template-columns:290px 1fr}.plots,.below{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plot-wrap{height:320px}.plots > .card:first-child .plot-wrap{height:320px;min-height:320px}.signal-card .plot-wrap{height:190px}}
+  @media(max-width:750px){
+    .float-params{display:block;position:fixed;left:10px;bottom:18px;background:#10516d;color:white;border:0;border-radius:12px;padding:13px 15px;box-shadow:0 5px 24px #102c4960;font-weight:780;font-size:12px;z-index:60}
+    .close-params{display:block;float:right;background:#eff5f8;border:1px solid #d3e1e8;border-radius:8px;padding:5px 8px;font-size:12px}
+    .panel,.is-embedded .panel{position:fixed;left:0;top:0;bottom:0;width:min(88vw,350px);height:100vh;max-height:100vh;overflow-y:auto;border-radius:0 18px 18px 0;z-index:75;transform:translateX(-110%);transition:transform .2s ease;box-shadow:0 12px 30px #152d4660}
+    .panel.panel-open,.is-embedded .panel.panel-open{transform:translateX(0)!important}
+    body.panel-open::after{content:"";position:fixed;inset:0;background:#10233e70;z-index:70}
+    .scope-readout{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.scope-readout .readout-cell{padding:7px 6px}.scope-readout strong{font-size:13px}
+    .frame{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.plots{grid-template-columns:1fr}.below{grid-template-columns:1fr}.panel{order:1}.main{order:2}.plot-wrap{height:290px}.plots > .card:first-child .plot-wrap{height:290px;min-height:290px}}
+  @media print {.top-actions,.presets{display:none} .frame{display:block}.panel{break-after:page}.card{break-inside:avoid}body{background:white}}
+</style>
+<link rel="stylesheet" href="mismatch-exercise.css">
+</head>
+<body>
+<header class="top">
+  <div><div class="kicker">VLSI DESIGN · LABORATORY 1</div><h1>CMOS Inverter: Sizing, Noise Margins & Delay</h1><div class="tagline">Change transistor sizing, predict mismatch consequences, and measure VTC, noise margins and intrinsic delay. No external load.</div></div>
+  <div class="top-actions"><a class="action" style="text-decoration:none" href="../chapters/01-cmos-inverter.html">← Back to Chapter 1</a><button type="button" class="action" id="resetTop">↺ Reset</button><button type="button" class="action" id="fullScreen">⛶ Fullscreen</button></div>
+</header>
+<div class="frame">
+<button type="button" id="openParams" class="float-params" aria-expanded="false" aria-controls="designPanel">⚙ Design parameters</button>
+<aside class="panel" id="designPanel" aria-label="Adjustable design parameters">
+  <button type="button" class="close-params" id="closeParams" aria-label="Close design parameters">✕ Close</button>
+  <h2>1. Design parameters</h2>
+  <p class="panel-intro">Adjust the transistor geometry or operating conditions. All plots update automatically.</p>
+  <div class="group-label">Transistor geometry</div>
+  <div class="control"><label for="wp">PMOS width <i>W<sub>p</sub></i><output id="wpOut"></output></label><input id="wp" type="range" min="0.4" max="4.0" step="0.05" value="1.8"/><div class="range-label"><span>0.4 μm</span><span>4.0 μm</span></div></div>
+  <div class="control"><label for="wn">NMOS width <i>W<sub>n</sub></i><output id="wnOut"></output></label><input id="wn" type="range" min="0.4" max="2.0" step="0.05" value="0.9"/><div class="range-label"><span>0.4 μm</span><span>2.0 μm</span></div></div>
+  <div class="control"><label for="vdd">Supply voltage <i>V<sub>DD</sub></i><output id="vddOut"></output></label><input id="vdd" type="range" min="1.4" max="2.5" step="0.1" value="1.8"/><div class="range-label"><span>1.4 V</span><span>2.5 V</span></div></div>
+  <details>
+    <summary>Advanced transistor parameters</summary>
+    <div class="control"><label for="mn">μ<sub>n</sub>C<sub>ox</sub><output id="mnOut"></output></label><input id="mn" type="range" min="100" max="300" step="10" value="200"/></div>
+    <div class="control"><label for="mp">μ<sub>p</sub>C<sub>ox</sub><output id="mpOut"></output></label><input id="mp" type="range" min="50" max="200" step="5" value="100"/></div>
+    <div class="control"><label for="vtn">NMOS threshold V<sub>TN</sub><output id="vtnOut"></output></label><input id="vtn" type="range" min="0.2" max="0.6" step="0.02" value="0.4"/></div>
+    <div class="control"><label for="vtp">PMOS threshold |V<sub>TP</sub>|<output id="vtpOut"></output></label><input id="vtp" type="range" min="0.2" max="0.6" step="0.02" value="0.4"/></div>
+    <div class="control"><label for="length">Both channel lengths L<output id="lengthOut"></output></label><input id="length" type="range" min="0.12" max="0.30" step="0.01" value="0.18"/></div>
+  </details>
+  <div class="group-label">One-click classroom experiments</div>
+  <div class="presets"><button class="preset" data-preset="weak">Weak PMOS</button><button class="preset" data-preset="balanced">Balanced</button><button class="preset" data-preset="strong">Strong PMOS</button></div>
+  <p class="muted" style="margin-top:11px">Try <b>Weak PMOS → Balanced → Strong PMOS</b>: which direction does the switching point move? When does the output switch?</p>
+</aside>
+<main class="main">
+  <section class="metrics" aria-label="Live circuit measurements">
+    <div class="metric"><div class="k">Strength ratio β<sub>p</sub> / β<sub>n</sub></div><div class="v" id="ratioStat">1.00</div><div class="s" id="strengthLabel">Balanced strengths</div></div>
+    <div class="metric"><div class="k">Switching threshold V<sub>M</sub></div><div class="v" id="vmStat">0.900 V</div><div class="s" id="vmLabel">VDD/2 = 0.900 V</div></div>
+    <div class="metric"><div class="k">NMOS strength β<sub>n</sub></div><div class="v" id="bnStat">1000</div><div class="s">μA/V² · pull-down</div></div>
+    <div class="metric"><div class="k">PMOS strength β<sub>p</sub></div><div class="v" id="bpStat">1000</div><div class="s">μA/V² · pull-up</div></div>
+  </section>
+  <section class="card diagnostics" aria-label="Critical sizing metrics">
+    <div class="head-row"><h2>2. Critical parameters — what changes under mismatch?</h2><span class="pill">Live estimates</span></div>
+    <p class="intro"><b>VIL</b> and <b>VIH</b> are the VTC input points at slope −1. <b>NML</b> = VIL − VOL and <b>NMH</b> = VOH − VIH. The 50%-crossing delays use only <b>illustrative intrinsic output capacitance</b>, with no external load.</p>
+    <div class="diagnostic-grid">
+      <div class="diagnostic"><div class="key">VIL — max input LOW</div><div class="number" id="vilMetric">—</div><div class="detail">VTC slope = −1</div></div>
+      <div class="diagnostic"><div class="key">VIH — min input HIGH</div><div class="number" id="vihMetric">—</div><div class="detail">VTC slope = −1</div></div>
+      <div class="diagnostic"><div class="key">NML — LOW noise margin</div><div class="number" id="nmlMetric">—</div><div class="detail">VIL − VOL</div></div>
+      <div class="diagnostic"><div class="key">NMH — HIGH noise margin</div><div class="number" id="nmhMetric">—</div><div class="detail">VOH − VIH</div></div>
+      <div class="diagnostic"><div class="key">tPLH — output rise</div><div class="number" id="tplhMetric">—</div><div class="detail">Ideal step, 50% output</div></div>
+      <div class="diagnostic"><div class="key">tPHL — output fall</div><div class="number" id="tphlMetric">—</div><div class="detail">Ideal step, 50% output</div></div>
+    </div>
+    <div class="scenario">
+      <div><h3 style="font-size:13px;margin:8px 0 6px">Balanced reference vs. your design</h3>
+        <table class="compare-table"><thead><tr><th>Parameter</th><th>Balanced default</th><th>Your design</th><th>Δ</th></tr></thead><tbody>
+          <tr><td>VM</td><td id="comparison-vm-base"></td><td id="comparison-vm-now"></td><td id="comparison-vm-delta"></td></tr>
+          <tr><td>NML</td><td id="comparison-nml-base"></td><td id="comparison-nml-now"></td><td id="comparison-nml-delta"></td></tr>
+          <tr><td>NMH</td><td id="comparison-nmh-base"></td><td id="comparison-nmh-now"></td><td id="comparison-nmh-delta"></td></tr>
+          <tr><td>tPLH</td><td id="comparison-tplh-base"></td><td id="comparison-tplh-now"></td><td id="comparison-tplh-delta"></td></tr>
+          <tr><td>tPHL</td><td id="comparison-tphl-base"></td><td id="comparison-tphl-now"></td><td id="comparison-tphl-delta"></td></tr>
+        </tbody></table></div>
+      <div class="scenario-note"><b>Live interpretation</b><p id="currentInference">Changing sizing updates the comparison.</p><p style="margin-bottom:0">Estimated internal node capacitance: <b id="capEstimate">—</b> (computed, not a control). <b>No external load</b>. This exercise studies <i>drive-strength imbalance</i> (βp/βn ≠ 1), not a stochastic transistor-mismatch distribution.</p></div>
+    </div>
+  </section>
+  <section class="plots">
+    <div class="card">
+      <div class="head-row"><h2>3. Voltage-Transfer Characteristic</h2><span class="pill">DC simulation</span></div>
+      <p class="subtitle">How V<sub>out</sub> depends on a slowly swept V<sub>in</sub>.</p>
+      <div class="plot-wrap"><canvas id="vtcPlot" aria-label="Voltage transfer characteristic graph" role="img"></canvas></div>
+      <div class="legend"><span><i class="dot" style="background:var(--teal)"></i>VTC</span><span><i class="dot" style="background:#96a5b9"></i>V<sub>out</sub> = V<sub>in</sub></span><span><i class="dot" style="background:var(--orange)"></i>Switching point</span></div>
+    </div>
+    <div class="signal-stack" aria-label="Separate time-domain voltage plots">
+      <div class="card signal-card input-card">
+        <div class="head-row"><h2>4A. Input Voltage · V<sub>in</sub></h2><span class="pill">Fixed test pattern</span></div>
+        <p class="subtitle">Fixed input test pattern; the two time cursors mark input and output 50% crossings on the same timeline.</p>
+        <div class="plot-wrap"><canvas id="inputPlot" aria-label="Input voltage Vin with aligned 50% delay cursors and picosecond time axis" role="img"></canvas></div>
+        <div class="legend"><span><i class="dot" style="background:var(--blue)"></i>V<sub>in</sub></span><span><i class="dot" style="background:var(--teal)"></i>Switching threshold V<sub>M</sub></span></div>
+      </div>
+      <div class="card signal-card output-card">
+        <div class="head-row"><h2>4B. Output Voltage · V<sub>out</sub></h2><span class="pill">Open-circuit output</span></div>
+        <p class="subtitle">Unloaded transient output with intrinsic parasitic capacitance: the 50% crossing now occurs after the input cursor.</p>
+        <div class="plot-wrap"><canvas id="outputPlot" aria-label="Output transient voltage with aligned 50% delay cursors and picosecond time axis" role="img"></canvas></div>
+        <div class="legend"><span><i class="dot" style="background:var(--orange)"></i>V<sub>out</sub></span><span>Input HIGH → output LOW; input LOW → output HIGH</span></div>
+        <div class="timing-select" aria-label="Select the transition to measure">
+          <b style="font-size:11px;color:#536b7e">Measure on these graphs:</b>
+          <button type="button" data-wave-edge="fall" aria-pressed="true">Input ↑ → Output ↓ (tPHL)</button>
+          <button type="button" data-wave-edge="rise" aria-pressed="false">Input ↓ → Output ↑ (tPLH)</button>
+        </div>
+        <div class="scope-readout" aria-live="polite">
+          <div class="readout-cell"><small>Cursor A · Vin = 50%</small><strong id="waveCursorA">—</strong></div>
+          <div class="readout-cell"><small>Cursor B · Vout = 50%</small><strong id="waveCursorB">—</strong></div>
+          <div class="readout-cell"><small id="waveDelayName">Measured tPHL = B − A</small><strong id="waveDelay">—</strong></div>
+        </div>
+        <p class="scope-note">The dashed blue A and orange B vertical cursors are aligned across graphs 4A and 4B. The two-headed caliper marks the measured 50%-to-50% delay for the selected input ramp. The fixed test sequence uses 40 ps per original normalized-time unit (no frequency slider). Delay differs from an ideal-step result in Section 5 because the input here has finite rise/fall time.</p>
+      </div>
+    </div>
+  </section>
+  <section class="card step-section" id="delay-measurement" aria-label="Transient response and delay comparison">
+    <div class="head-row"><h2>5. Measure propagation delay with two 50% cursors</h2><span class="pill">Estimated intrinsic transient</span></div>
+    <p class="intro">This is the <b>actual delay measurement example</b> as a complementary ideal-step comparison after the in-place 4A/4B delay measurement. Each scope plot overlays the <b>ideal input step (blue)</b>, <b>your output (green)</b>, and <b>balanced reference output (gray dashed)</b> on one time axis in picoseconds. Two vertical cursors measure the interval from <b>input 50% (A)</b> to <b>output 50% (B)</b>. Changing Wp or Wn updates both waveforms and the caliper distance.</p>
+    <div class="step-grid">
+      <div class="step-panel"><h3>Output LOW → HIGH: tPLH</h3><p class="caption">Input makes a HIGH → LOW step; PMOS charges Vout.</p><canvas id="riseResponse" role="img" aria-label="Oscilloscope input falling and output rising with two 50 percent delay cursors"></canvas>
+      <div class="cursor-readout"><div><span>Cursor A · input 50%</span><strong id="riseInputTime">—</strong></div><div><span>Cursor B · output 50%</span><strong id="riseOutputTime">—</strong></div><div class="delta"><span>B − A = tPLH</span><strong id="riseDelayValue">—</strong></div></div></div>
+      <div class="step-panel"><h3>Output HIGH → LOW: tPHL</h3><p class="caption">Input makes a LOW → HIGH step; NMOS discharges Vout.</p><canvas id="fallResponse" role="img" aria-label="Oscilloscope input rising and output falling with two 50 percent delay cursors"></canvas>
+      <div class="cursor-readout"><div><span>Cursor A · input 50%</span><strong id="fallInputTime">—</strong></div><div><span>Cursor B · output 50%</span><strong id="fallOutputTime">—</strong></div><div class="delta"><span>B − A = tPHL</span><strong id="fallDelayValue">—</strong></div></div></div>
+    </div>
+    <div class="step-legend"><span><i class="legend-line input-line"></i>Input step</span><span><i class="legend-line"></i>Your output</span><span><i class="legend-line reference"></i>Balanced output</span><span><i class="legend-line cursor-line"></i>50% cursor</span></div>
+    <div class="method-note"><b>Method:</b> tPLH and tPHL are numerical solutions of t = ∫Cint / |ID(Vout)| dV from rail to half-supply for a <b>step input</b>. In this teaching example Cint = [0.8 + 0.85 × (Wp + Wn)] fF, with widths in μm, chosen solely to illustrate geometry-dependent drain/wiring parasitics. It is not a calibrated process parameter. The 4A/4B plots above also use a picosecond axis (40 ps per original normalized-time unit) but have finite ramp inputs, whereas these step-response plots use <b>ideal</b> input edges. A marks the ideal step-input 50% crossing; B marks the modeled output 50% crossing. The propagation delay is B − A; it differs from the 4A/4B measured delay because the input edge here is ideal, not finite-slew.</div>
+  </section>
+  <section class="below">
+    <div class="finding"><h3>6. What should students notice?</h3><p id="finding">A balanced beta ratio places the switching point near VDD/2. The output inverts the input.</p></div>
+    <div class="model"><h3>Model equations</h3><div class="math">β = μC<sub>ox</sub>(W / L)</div><div class="math">β<sub>p</sub>/β<sub>n</sub> = (μ<sub>p</sub>C<sub>ox</sub>W<sub>p</sub>)/(μ<sub>n</sub>C<sub>ox</sub>W<sub>n</sub>)</div><div class="math">I<sub>n</sub>(V<sub>in</sub>,V<sub>out</sub>) = I<sub>p</sub>(V<sub>in</sub>,V<sub>out</sub>)</div><p>Equal channel lengths are assumed for the ratio. DC current balance determines the ideal open-circuit output voltage.</p></div>
+  </section>
+  <section class="card quiz-section" aria-label="Interactive quiz">
+    <div class="head-row"><h2>7. Predict → Test → Explain: five classroom questions</h2><span class="pill" id="quizProgress">0 of 5 correct</span></div>
+    <p class="intro">Begin with the <b>Balanced</b> preset (Wp = 1.8 μm), predict the answer, then choose <b>Weak PMOS</b> (Wp = 0.9 μm) to check the live values. Click one answer per question for instant feedback.</p>
+    <div class="quiz-grid">
+      <div class="question" data-q="shift"><div class="question-label">Q1 · Switching point</div><h3>If Wp is halved while Wn stays fixed, which way does VM move?</h3><div class="answers"><button class="answer" data-question="shift" data-choice="left">Left (below VDD/2)</button><button class="answer" data-question="shift" data-choice="right">Right (above VDD/2)</button><button class="answer" data-question="shift" data-choice="same">It does not move</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="margin"><div class="question-label">Q2 · Noise immunity</div><h3>For weaker PMOS drive, which noise margin shrinks in our example?</h3><div class="answers"><button class="answer" data-question="margin" data-choice="nml">NML — the LOW-input noise margin</button><button class="answer" data-question="margin" data-choice="nmh">NMH — the HIGH-input noise margin</button><button class="answer" data-question="margin" data-choice="none">Neither changes</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="delay"><div class="question-label">Q3 · Propagation delay</div><h3>When Wp decreases, which 50%-output step delay becomes longer?</h3><div class="answers"><button class="answer" data-question="delay" data-choice="tplh">tPLH — LOW to HIGH output</button><button class="answer" data-question="delay" data-choice="tphl">tPHL — HIGH to LOW output</button><button class="answer" data-question="delay" data-choice="none">Neither: output has no load</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="noise"><div class="question-label">Q4 · Noise vs. margin</div><h3>Does beta-ratio imbalance itself add random electrical noise?</h3><div class="answers"><button class="answer" data-question="noise" data-choice="yes">Yes, noise power increases automatically</button><button class="answer" data-question="noise" data-choice="no">No; it changes noise margins / immunity</button><button class="answer" data-question="noise" data-choice="noisy">Yes, only when NMOS is stronger</button></div><p class="feedback" aria-live="polite"></p></div>
+      <div class="question" data-q="open"><div class="question-label">Q5 · Open circuit</div><h3>With no external output capacitor, should propagation delay be zero?</h3><div class="answers"><button class="answer" data-question="open" data-choice="zero">Yes, there is no capacitance</button><button class="answer" data-question="open" data-choice="nonzero">No, intrinsic parasitics still exist</button><button class="answer" data-question="open" data-choice="random">No, because the inverter creates noise</button></div><p class="feedback" aria-live="polite"></p></div>
+    </div>
+    <div class="quiz-end"><b>Challenge:</b> Now select <b>Strong PMOS</b>. Predict which delay gets shorter, which noise margin becomes smaller, and whether VM increases or decreases. Record the live values before and after. <b>Remember:</b> transistor sizing trades switching thresholds, noise margin, intrinsic capacitance and timing.</div>
+  </section>
+  <div class="foot"><b>Model scope:</b> Open-circuit means <b>no externally connected load</b> (not zero intrinsic capacitance). The displayed input pattern has a fixed illustrative timing scale (1 normalized unit = 40 ps). The time-domain output uses intrinsic Cint and numerically integrates (Ip − In)/Cint during the finite input ramp; the VTC uses the long-channel square-law DC model (λ = 0.06 V⁻¹). No frequency or external-load capacitance control is provided. The aligned main Vin/Vout waveforms now show finite input-slew propagation delay from 50% to 50%; the separate plots compare ideal-step intrinsic delays using the same illustrative capacitance model. No stochastic noise source, PDK-calibrated delays, or energy is simulated. Results are educational estimates, not SPICE or silicon measurements.</div>
+</main>
+</div>
+<script>
+(()=>{
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const ids=['wp','wn','vdd','mn','mp','vtn','vtp','length'];
+  const base={wp:1.8,wn:.9,vdd:1.8,mn:200,mp:100,vtn:.4,vtp:.4,length:.18};
+  const fmts={wp:v=>v.toFixed(2)+' μm',wn:v=>v.toFixed(2)+' μm',vdd:v=>v.toFixed(1)+' V',mn:v=>v.toFixed(0)+' μA/V²',mp:v=>v.toFixed(0)+' μA/V²',vtn:v=>v.toFixed(2)+' V',vtp:v=>v.toFixed(2)+' V',length:v=>v.toFixed(2)+' μm'};
+  const read=()=>Object.fromEntries(ids.map(k=>[k,Number($(k).value)]));
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const lambda=.06;
+  let latest=null;
+  function currentN(vin,vout,p){
+    const od=vin-p.vtn;
+    if(od<=0)return 0;
+    const vd=clamp(vout,0,p.vdd);
+    if(vd<od)return p.bn*(od*vd-.5*vd*vd);
+    return .5*p.bn*od*od*(1+lambda*(vd-od));
+  }
+  function currentP(vin,vout,p){
+    const od=p.vdd-vin-p.vtp;
+    if(od<=0)return 0;
+    const vd=clamp(p.vdd-vout,0,p.vdd);
+    if(vd<od)return p.bp*(od*vd-.5*vd*vd);
+    return .5*p.bp*od*od*(1+lambda*(vd-od));
+  }
+  function staticOut(vin,p){
+    if(vin<=p.vtn)return p.vdd;
+    if(vin>=p.vdd-p.vtp)return 0;
+    let lo=0,hi=p.vdd;
+    for(let i=0;i<34;i++){
+      const mid=(lo+hi)/2;
+      if(currentN(vin,mid,p)>currentP(vin,mid,p))hi=mid;else lo=mid;
+    }
+    return (lo+hi)/2;
+  }
+  function solveVM(p){
+    let lo=0,hi=p.vdd;
+    for(let i=0;i<40;i++){
+      const x=(lo+hi)/2;
+      if(staticOut(x,p)>x)lo=x;else hi=x;
+    }
+    return (lo+hi)/2;
+  }
+  // One fixed, normalized two-cycle input pattern: no frequency control.
+  // The finite ramp makes changes in the switching threshold visually clear.
+  function inputAt(t,p){
+    const q=((t%1)+1)%1;
+    if(q<.12)return 0;
+    if(q<.34)return p.vdd*(q-.12)/.22;
+    if(q<.60)return p.vdd;
+    if(q<.82)return p.vdd*(1-(q-.60)/.22);
+    return 0;
+  }
+  // Fixed input pattern timing for teaching: NOT a user-selectable frequency.
+  const psPerSequenceUnit=40;
+  const numWavePoints=1601;
+  const intrinsicCap=p=>(0.8+0.85*(p.wp+p.wn))*1e-15; // F; same teaching assumption as Section 5.
+  function firstCrossing(wave,key,level,direction,t0,t1){
+    for(let i=1;i<wave.length;i++){
+      const a=wave[i-1],b=wave[i];
+      if(a.t<t0||b.t>t1)continue;
+      const va=a[key]-level,vb=b[key]-level;
+      if((direction==='up' && va<0 && vb>=0)||(direction==='down' && va>0 && vb<=0)){
+        const fraction=va/(va-vb);
+        return a.t+(b.t-a.t)*fraction;
+      }
+    }
+    return NaN;
+  }
+  function simulate(p){
+    p.bn=p.mn*1e-6*(p.wn/p.length);
+    p.bp=p.mp*1e-6*(p.wp/p.length);
+    p.ratio=p.bp/p.bn;
+    p.vm=solveVM(p);
+    p.vtc=Array.from({length:501},(_,i)=>{const vin=p.vdd*i/500;return {x:vin,y:staticOut(vin,p)};});
+    let vout=p.vdd;
+    const dtNorm=2/(numWavePoints-1),dtSeconds=dtNorm*psPerSequenceUnit*1e-12;
+    const cap=intrinsicCap(p);
+    p.wave=Array.from({length:numWavePoints},(_,i)=>{
+      const t=2*i/(numWavePoints-1);
+      if(i){
+        const vinMid=inputAt(t-dtNorm*.5,p);
+        const delta=(currentP(vinMid,vout,p)-currentN(vinMid,vout,p))*dtSeconds/cap;
+        vout=clamp(vout+delta,0,p.vdd);
+      }
+      return {t,vin:inputAt(t,p),vout};
+    });
+    const half=p.vdd/2;
+    const fallA=firstCrossing(p.wave,'vin',half,'up',.12,.35);
+    const fallB=firstCrossing(p.wave,'vout',half,'down',.12,.53);
+    const riseA=firstCrossing(p.wave,'vin',half,'down',.60,.83);
+    const riseB=firstCrossing(p.wave,'vout',half,'up',.60,1.00);
+    p.waveTiming={fall:{a:fallA,b:fallB,delayPs:(fallB-fallA)*psPerSequenceUnit},
+                  rise:{a:riseA,b:riseB,delayPs:(riseB-riseA)*psPerSequenceUnit}};
+    p.waveTimingScale=psPerSequenceUnit;
+    return p;
+  }
+  function plotCanvas(canvas,render){
+    const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height;
+    if(w<10||h<10)return;
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+    const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+    render(c,w,h);
+  }
+  let selectedWaveEdge='fall';
+  function drawScopeCursors(c,w,h,p,kind,X,Y,gap){
+    const m=p.waveTiming[selectedWaveEdge];
+    if(!m||!Number.isFinite(m.delayPs))return;
+    const xA=X(m.a,2),xB=X(m.b,2),y50=Y(p.vdd/2),top=gap.t,bottom=h-gap.b;
+    // The same two x positions appear in both vertically stacked graphs.
+    c.save();
+    c.setLineDash([4,4]);c.lineWidth=1.5;
+    for(const [x,color] of [[xA,'#2867c1'],[xB,'#db6a33']]){
+      c.strokeStyle=color;c.beginPath();c.moveTo(x,top);c.lineTo(x,bottom);c.stroke();
+    }
+    c.setLineDash([]);
+    c.font='bold 10px system-ui,sans-serif';c.textBaseline='middle';
+    const mt=kind==='input'?m.a:m.b;
+    c.fillStyle=kind==='input'?'#2867c1':'#db6a33';
+    c.beginPath();c.arc(X(mt,2),y50,4.5,0,Math.PI*2);c.fill();
+    // Avoid overlapping A/B labels when delay is just a few picoseconds.
+    c.fillStyle='#2867c1';c.textAlign='left';c.fillText('A',Math.max(gap.l+2,xA-16),top+10);
+    c.fillStyle='#db6a33';c.textAlign='right';c.fillText('B',Math.min(w-gap.r-2,xB+15),top+23);
+    if(kind==='output'){
+      const yArrow=top+35,left=Math.min(xA,xB),right=Math.max(xA,xB);
+      c.strokeStyle='#147c80';c.fillStyle='#147c80';c.lineWidth=2;
+      c.beginPath();c.moveTo(left,yArrow);c.lineTo(right,yArrow);c.stroke();
+      const length=6;
+      // Caliper arrow heads; handle reverse crossings as a valid signed interval.
+      c.beginPath();c.moveTo(left,yArrow);c.lineTo(left+length,yArrow-4);c.lineTo(left+length,yArrow+4);c.closePath();c.fill();
+      c.beginPath();c.moveTo(right,yArrow);c.lineTo(right-length,yArrow-4);c.lineTo(right-length,yArrow+4);c.closePath();c.fill();
+      const label=(selectedWaveEdge==='fall'?'tPHL':'tPLH')+' = '+m.delayPs.toFixed(2)+' ps';
+      const lbX=Math.min(w-gap.r-98,Math.max(gap.l+72,(xA+xB)/2));
+      c.font='bold 11px system-ui,sans-serif';c.fillStyle='#08756d';c.textAlign='center';
+      c.fillText(label,lbX,top+52);
+    }
+    c.restore();
+  }
+  function drawGraph(c,w,h,p,kind){
+    const gap={l:48,r:15,t:17,b:39};
+    const pw=w-gap.l-gap.r,ph=h-gap.t-gap.b;
+    const X=(v,max)=>gap.l+v/max*pw;
+    const Y=v=>gap.t+(1-v/p.vdd)*ph;
+    c.clearRect(0,0,w,h);
+    c.font='11px system-ui,sans-serif';c.textBaseline='middle';
+    for(let i=0;i<=4;i++){
+      const v=i*p.vdd/4,yy=Y(v);
+      c.beginPath();c.moveTo(gap.l,yy);c.lineTo(w-gap.r,yy);c.strokeStyle='#e6ecf3';c.lineWidth=1;c.stroke();
+      c.textAlign='right';c.fillStyle='#718097';c.fillText(v.toFixed(2),gap.l-8,yy);
+    }
+    const xmax=kind==='vtc'?p.vdd:2;
+    for(let i=0;i<=4;i++){
+      const v=xmax*i/4,xx=X(v,xmax);
+      c.beginPath();c.moveTo(xx,gap.t);c.lineTo(xx,h-gap.b);c.strokeStyle='#edf1f6';c.stroke();
+      c.textAlign='center';c.fillStyle='#718097';c.fillText(kind==='vtc'?v.toFixed(2):(v*psPerSequenceUnit).toFixed(0),xx,h-gap.b+17);
+    }
+    c.strokeStyle='#91a1b5';c.lineWidth=1.1;
+    c.beginPath();c.moveTo(gap.l,gap.t);c.lineTo(gap.l,h-gap.b);c.lineTo(w-gap.r,h-gap.b);c.stroke();
+    c.fillStyle='#415366';c.font='11px system-ui,sans-serif';c.textAlign='center';
+    c.fillText(kind==='vtc'?'Input voltage Vin (V)':'Time (ps; fixed input pattern)',gap.l+pw/2,h-8);
+    c.save();c.translate(11,gap.t+ph/2);c.rotate(-Math.PI/2);c.fillText(kind==='vtc'?'Output voltage Vout (V)':kind==='input'?'Input Vin (V)':'Output Vout (V)',0,0);c.restore();
+    function poly(arr,fieldX,fieldY,color,lineWidth=2.6,dash=[]){
+      c.beginPath();c.setLineDash(dash);
+      arr.forEach((q,i)=>{const x=X(q[fieldX],xmax),y=Y(q[fieldY]);if(i===0)c.moveTo(x,y);else c.lineTo(x,y);});
+      c.strokeStyle=color;c.lineWidth=lineWidth;c.lineJoin='round';c.lineCap='round';c.stroke();c.setLineDash([]);
+    }
+    if(kind==='vtc'){
+      poly([{x:0,y:0},{x:p.vdd,y:p.vdd}],'x','y','#b1bccc',1.3,[6,5]);
+      poly(p.vtc,'x','y','#008f7b',3.2);
+      const px=X(p.vm,xmax),py=Y(p.vm);
+      c.setLineDash([4,4]);c.strokeStyle='#dd6d34';c.lineWidth=1.25;
+      c.beginPath();c.moveTo(px,h-gap.b);c.lineTo(px,py);c.lineTo(gap.l,py);c.stroke();c.setLineDash([]);
+      c.fillStyle='#dd6d34';c.beginPath();c.arc(px,py,5,0,Math.PI*2);c.fill();
+      c.textAlign='left';c.font='bold 11px system-ui';c.fillText('VM = '+p.vm.toFixed(3)+' V',Math.min(px+10,w-115),Math.max(py-13,16));
+    }else if(kind==='input'){
+      poly(p.wave,'t','vin','#2d6cdf',2.8);
+      const yp=Y(p.vm);
+      c.setLineDash([5,5]);c.strokeStyle='#008f7b';c.lineWidth=1.3;
+      c.beginPath();c.moveTo(gap.l,yp);c.lineTo(w-gap.r,yp);c.stroke();c.setLineDash([]);
+      c.fillStyle='#008f7b';c.font='bold 10px system-ui,sans-serif';c.textAlign='right';
+      c.fillText('VM = '+p.vm.toFixed(3)+' V',w-gap.r-5,Math.max(15,yp-10));
+      drawScopeCursors(c,w,h,p,kind,X,Y,gap);
+    }else if(kind==='output'){
+      poly(p.wave,'t','vout','#dd6d34',2.8);
+      c.setLineDash([4,5]);c.strokeStyle='#a9b6c6';c.lineWidth=1;
+      c.beginPath();c.moveTo(gap.l,Y(p.vdd/2));c.lineTo(w-gap.r,Y(p.vdd/2));c.stroke();c.setLineDash([]);
+      drawScopeCursors(c,w,h,p,kind,X,Y,gap);
+    }
+  }
+  function update(){
+    const raw=read();
+    for(const k of ids)$(k+'Out').textContent=fmts[k](raw[k]);
+    latest=simulate(raw);
+    const p=latest;
+    $('ratioStat').textContent=p.ratio.toFixed(2);
+    $('strengthLabel').textContent=p.ratio<.94?'NMOS pull-down stronger':p.ratio>1.06?'PMOS pull-up stronger':'Near-balanced strengths';
+    $('vmStat').textContent=p.vm.toFixed(3)+' V';
+    $('vmLabel').textContent='VDD/2 = '+(p.vdd/2).toFixed(3)+' V';
+    $('bnStat').textContent=(p.bn*1e6).toFixed(0);
+    $('bpStat').textContent=(p.bp*1e6).toFixed(0);
+    const shift=p.vm-p.vdd/2;
+    let comment= Math.abs(shift)<.008?'The switching point is close to VDD/2 (balanced).':shift<0?'The switching point shifts LEFT because pull-down is stronger around the transition.':'The switching point shifts RIGHT because pull-up is stronger around the transition.';
+    $('finding').textContent=comment+' The aligned 50% cursors in graphs 4A/4B now measure finite-ramp propagation delay directly. The section below separately compares ideal-step intrinsic delay.';
+    const timing=p.waveTiming[selectedWaveEdge];
+    $('waveCursorA').textContent=Number.isFinite(timing.a)?(timing.a*psPerSequenceUnit).toFixed(2)+' ps':'—';
+    $('waveCursorB').textContent=Number.isFinite(timing.b)?(timing.b*psPerSequenceUnit).toFixed(2)+' ps':'—';
+    $('waveDelay').textContent=Number.isFinite(timing.delayPs)?timing.delayPs.toFixed(2)+' ps':'—';
+    $('waveDelayName').textContent=(selectedWaveEdge==='fall'?'Measured tPHL':'Measured tPLH')+' = B − A';
+    renderAll();
+  }
+  function renderAll(){
+    if(!latest)return;
+    plotCanvas($('vtcPlot'),(c,w,h)=>drawGraph(c,w,h,latest,'vtc'));
+    plotCanvas($('inputPlot'),(c,w,h)=>drawGraph(c,w,h,latest,'input'));
+    plotCanvas($('outputPlot'),(c,w,h)=>drawGraph(c,w,h,latest,'output'));
+  }
+  document.querySelectorAll('[data-wave-edge]').forEach(button=>button.addEventListener('click',()=>{
+    selectedWaveEdge=button.dataset.waveEdge;
+    document.querySelectorAll('[data-wave-edge]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+    update();
+  }));
+  for(const k of ids)$(k).addEventListener('input',update);
+  document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{
+    const preset=b.dataset.preset; Object.entries(base).forEach(([k,v])=>$(k).value=v);
+    if(preset==='weak')$('wp').value=.9;
+    if(preset==='strong')$('wp').value=2.7;
+    update();
+  }));
+  $('resetTop').addEventListener('click',()=>{Object.entries(base).forEach(([k,v])=>$(k).value=v);update();});
+  $('fullScreen').addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.();});
+  window.VLSI_LAB={read,simulate,currentN,currentP,staticOut,solveVM,base,psPerSequenceUnit};
+  window.addEventListener('resize',renderAll);
+  // Desktop: keep settings visible during scrolling, including when this lab is embedded in the book.
+  let parentFrame=null;
+  if(window.parent!==window){
+    try{parentFrame=window.frameElement;if(parentFrame)document.body.classList.add('is-embedded');}catch(e){parentFrame=null;}
+  }
+  function followParent(){
+    if(!parentFrame)return;
+    try{
+      const panel=$('designPanel'),frame=document.querySelector('.frame');
+      const iframeBox=parentFrame.getBoundingClientRect();
+      if(window.innerWidth<=750){
+        // A full-height responsive iframe normally pins a fixed button to its far-off bottom.
+        // Place the mobile settings tab inside the visible section of the PARENT page instead.
+        const h=Math.min(window.parent.innerHeight-20,620);
+        const offset=clamp(window.parent.innerHeight-74-iframeBox.top,14,Math.max(14,iframeBox.height-66));
+        const button=$('openParams');
+        button.style.position='absolute';button.style.bottom='auto';button.style.top=offset.toFixed(0)+'px';
+        panel.style.position='absolute';
+        panel.style.top=clamp(14-iframeBox.top,0,Math.max(0,iframeBox.height-h)).toFixed(0)+'px';
+        panel.style.bottom='auto';panel.style.height=h.toFixed(0)+'px';panel.style.maxHeight=h.toFixed(0)+'px';
+        return;
+      }
+      $('openParams').removeAttribute('style');
+      panel.style.removeProperty('height');panel.style.removeProperty('max-height');panel.style.removeProperty('bottom');
+      panel.style.removeProperty('position');
+      const relativeTop=panel.offsetTop;
+      const desired=14-iframeBox.top-relativeTop;
+      const limit=Math.max(0,frame.offsetHeight-panel.offsetHeight-12);
+      panel.style.transform='translateY('+clamp(desired,0,limit).toFixed(0)+'px)';
+    }catch(e){}
+  }
+  if(parentFrame){
+    try{window.parent.addEventListener('scroll',followParent,{passive:true});window.parent.addEventListener('resize',followParent,{passive:true});}catch(e){}
+    window.addEventListener('resize',followParent,{passive:true});
+    requestAnimationFrame(followParent);
+  }
+  const designPanel=$('designPanel');
+  function toggleParams(open){
+    designPanel.classList.toggle('panel-open',open);
+    document.body.classList.toggle('panel-open',open);
+    $('openParams').setAttribute('aria-expanded',String(open));
+  }
+  $('openParams').addEventListener('click',()=>toggleParams(!designPanel.classList.contains('panel-open')));
+  $('closeParams').addEventListener('click',()=>toggleParams(false));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')toggleParams(false);});
+  if('ResizeObserver' in window){new ResizeObserver(()=>{renderAll();followParent();}).observe(document.querySelector('.plots'));}
+  update();
+})();
+</script>
+<script src="mismatch-exercise.js"></script>
+</body>
+</html>
