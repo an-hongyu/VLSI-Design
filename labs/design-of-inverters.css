@@ -5,3 +5,15 @@ main{padding:24px clamp(13px,2.6vw,36px) 34px}section{scroll-margin-top:30px}.se
 .axis-label{fill:#65798d;font:11px Inter,Arial,sans-serif}.tick{fill:#677c8e;font:10px Inter,Arial,sans-serif}.svg-title{fill:#173852;font:12px Inter,Arial,sans-serif;font-weight:700}
 @media(max-width:1100px){.case-grid{grid-template-columns:1fr}.case-card .eq{font-size:15px}.results{grid-template-columns:repeat(4,1fr)}}@media(max-width:850px){.compare-grid,.delay-grid{grid-template-columns:1fr}.chart{max-width:680px}.scope{max-width:650px}.delay-badge{white-space:normal}}@media(max-width:640px){main{padding:12px 11px 25px}.hero{padding:22px 16px}.hero-inner{align-items:start;flex-direction:column}.section-heading{align-items:start;flex-direction:column}.assumptions{text-align:left}.presets{grid-template-columns:1fr}.preset{min-height:0;padding:10px 12px}.preset-name{font-size:14px}.graph-card,.calculations{padding:15px 11px}.results{grid-template-columns:1fr 1fr}.formula-key{font-size:11px}.delay-heading{flex-direction:column}.graph-caption{font-size:11px}}
 @media print{.preset{break-inside:avoid}.graph-card,.case-card{break-inside:avoid}body{background:white}}
+/* Compact textbook timing diagrams in Graph 2; no separate noise-immunity chart. */
+.dynamics-card{display:flex;flex-direction:column}
+.teaching-diagram{border-top:1px solid #e0e8ee;padding-top:13px;margin-top:9px}
+.teaching-diagram h3{font-size:13px;margin:0 0 6px;color:#244861}
+.teaching-diagram .graph-caption{font-size:11px;padding:8px 10px;margin-top:3px}
+.textbook-chart{width:100%;max-width:740px;margin:0 auto}
+.textbook-chart svg{width:100%;height:auto;display:block}
+.dynamics-card .graph-lead{margin:5px 0}
+.mini-readout{margin:9px 0 0;background:#ecf7f5;color:#096967;padding:9px 11px;border:1px solid #c9e6e0;border-radius:8px;font-weight:760;font-size:12px;font-variant-numeric:tabular-nums}
+.case-card .timing-eq{font-size:12px}
+@media(min-width:1100px){.compare-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.13fr)}}
+@media(max-width:850px){.dynamics-card{display:block}}

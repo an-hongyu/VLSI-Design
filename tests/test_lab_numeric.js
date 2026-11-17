@@ -19,9 +19,10 @@ near(weak.tphl,2.18,.05);near(bal.tphl,2.90,.05);near(strong.tphl,3.62,.05);
 for(const c of cases){
   lab.select(c.id);
   assert(E('vtcChart').innerHTML.includes('<svg'));
-  assert(E('noiseChart').innerHTML.includes('<svg'));
-  assert(E('fallChart').innerHTML.includes('<svg'));
-  assert(E('riseChart').innerHTML.includes('<svg'));
+  assert(E('delayChart').innerHTML.includes('<svg'));
+  assert(E('transitionChart').innerHTML.includes('<svg'));
+  assert(E('delayChart').innerHTML.includes('50%'));
+  assert(E('transitionChart').innerHTML.includes('90%'));
   assert(E('caseCards').innerHTML.includes('100 × '+c.wp.toFixed(2)));
   assert(E('caseCards').innerHTML.match(/<article/g).length===3);
   assert(buttons.filter(b=>b.attrs['aria-pressed']==='true').length===1);
@@ -30,4 +31,8 @@ for(const c of cases){
 assert(weak.vm<bal.vm&&bal.vm<strong.vm);
 assert(weak.nml<bal.nml&&strong.nmh<bal.nmh);
 assert(weak.tplh>bal.tplh&&strong.tphl>bal.tphl);
-console.log('PASS: three physics-based scenarios, equations, plotted traces, and button selection')
+near(weak.tr,9.95,.07);near(bal.tr,6.61,.07);near(strong.tr,5.50,.07);
+near(weak.tf,4.98,.07);near(bal.tf,6.61,.07);near(strong.tf,8.24,.07);
+assert(weak.tr>bal.tr&&strong.tf>bal.tf);
+assert(!E('caseCards').innerHTML.includes('Noise Margins Chart'));
+console.log('PASS: three physics-based sizing scenarios, classic 50%/10–90% diagrams, and selection')

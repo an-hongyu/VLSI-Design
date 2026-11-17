@@ -27,8 +27,10 @@ for f in PAGES:
 lab=PAGES[-1].read_text(encoding='utf8')
 assert '<h1>Design of Inverters</h1>' in lab
 assert len(re.findall(r'<button\s+[^>]*data-case=',lab))==3
-assert all(x in lab for x in ['id="vtcChart"','id="noiseChart"','id="fallChart"','id="riseChart"','id="caseCards"','design-of-inverters.js'])
+assert all(x in lab for x in ['id="vtcChart"','id="delayChart"','id="transitionChart"','id="caseCards"','design-of-inverters.js'])
 assert 'type="range"' not in lab and 'quizProgress' not in lab
+assert 'id="noiseChart"' not in lab and 'LOW and HIGH Noise Margins' not in lab
+assert '(a) Propagation delay' in lab and '(b) Output rise/fall times' in lab
 assert 'No external output load' in lab or 'No external output load'.lower() in lab.lower() or 'no external output load' in lab.lower()
 assert (ROOT/'labs'/'cmos-inverter-advanced.html').exists()
 chapter=PAGES[1].read_text(encoding='utf8')
@@ -56,4 +58,4 @@ for name,count in [('fig-1-cmos-schematic.svg',2),('fig-2-pull-up-pull-down.svg'
         assert len(m.findall('./svg:path[@class="mos-channel"]',ns))==1
         assert len(m.findall('./svg:path[@class="mos-terminals"]',ns))==1
 for parent in [chapter,home]:assert 'vlsi-lab-height' in parent
-print('PASS: three buttons, three case formulas, three charts, accessible links, textbook schematics and responsive embed')
+print('PASS: three buttons, one VTC and two textbook timing charts, accessible links, textbook schematics and responsive embed')

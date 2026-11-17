@@ -45,25 +45,24 @@
         <div class="graph-legend"><span><i class="dot weak"></i>Weak</span><span><i class="dot balanced"></i>Balanced</span><span><i class="dot strong"></i>Strong</span></div>
         <p class="graph-caption"><b>What to notice:</b> Weak PMOS shifts the transition <b>left</b> (lower V<sub>M</sub>), while Strong PMOS shifts it <b>right</b> (higher V<sub>M</sub>).</p>
       </section>
-      <section class="graph-card" aria-labelledby="noise-title">
-        <div class="step-label">GRAPH 2 · NOISE IMMUNITY</div>
-        <h2 id="noise-title">LOW and HIGH Noise Margins</h2>
-        <p class="graph-lead">Compare both margins across the same three designs.</p>
-        <div id="noiseChart" class="chart" role="img" aria-label="Grouped bars for NML and NMH across weak balanced and strong PMOS"></div>
-        <div class="graph-legend"><span><i class="bar low"></i>NM<sub>L</sub> (LOW)</span><span><i class="bar high"></i>NM<sub>H</sub> (HIGH)</span></div>
-        <p class="graph-caption"><b>What to notice:</b> Weak PMOS reduces NM<sub>L</sub>; Strong PMOS reduces NM<sub>H</sub>. Strength mismatch changes <b>noise tolerance</b>, not random noise generation.</p>
+
+      <section class="graph-card dynamics-card" aria-labelledby="dynamic-title">
+        <div class="step-label">GRAPH 2 · DYNAMIC RESPONSE</div>
+        <h2 id="dynamic-title">Propagation Delay and Transition Times</h2>
+        <p class="graph-lead">Compare input and output transitions, using the same selected inverter design.</p>
+        <div class="teaching-diagram">
+          <h3>(a) Propagation delay — 50% input to 50% output</h3>
+          <div id="delayChart" class="textbook-chart" role="img" aria-label="Two stacked traces of input and output showing tPHL and tPLH with vertical 50 percent cursors"></div>
+          <p class="graph-caption"><b>Measure:</b> Input passes 50% V<sub>DD</sub> (blue cursor A), then output passes 50% V<sub>DD</sub> (orange cursor B). The time between A and B is <b>t<sub>pHL</sub></b> or <b>t<sub>pLH</sub></b>, named for the <em>output</em> transition.</p>
+        </div>
+        <div class="teaching-diagram">
+          <h3>(b) Output rise/fall times — 10% to 90%</h3>
+          <div id="transitionChart" class="textbook-chart" role="img" aria-label="Output waveform showing the 10 to 90 percent rise time and 90 to 10 percent fall time"></div>
+          <p class="graph-caption"><b>Measure:</b> t<sub>r</sub> is the output <b>10% → 90%</b> interval; t<sub>f</sub> is <b>90% → 10%</b>. Neither is the same as propagation delay.</p>
+        </div>
+        <p class="mini-readout" id="dynamicReadout">Balanced: tpHL = 2.90 ps · tpLH = 2.90 ps · tr = 6.61 ps · tf = 6.61 ps</p>
       </section>
     </div>
-
-    <section class="graph-card delay-card" aria-labelledby="delay-title">
-      <div class="step-label">GRAPH 3 · PROPAGATION DELAY</div>
-      <div class="delay-heading"><div><h2 id="delay-title">Measure Delay with Two 50% Cursors</h2><p class="graph-lead">Blue input voltage above orange output voltage. A = input 50%; B = output 50%.</p></div><div class="delay-badge">Ideal input step · No external output load</div></div>
-      <div class="delay-grid">
-        <div class="delay-panel"><h3>Output HIGH → LOW <span>t<sub>PHL</sub></span></h3><div id="fallChart" class="scope" role="img" aria-label="Input rising and output falling waveforms with 50 percent timing cursors"></div><p class="delay-result" id="fallDelay">tPHL = 2.90 ps</p></div>
-        <div class="delay-panel"><h3>Output LOW → HIGH <span>t<sub>PLH</sub></span></h3><div id="riseChart" class="scope" role="img" aria-label="Input falling and output rising waveforms with 50 percent timing cursors"></div><p class="delay-result" id="riseDelay">tPLH = 2.90 ps</p></div>
-      </div>
-      <p class="graph-caption"><b>What to notice:</b> A weaker PMOS charges the output more slowly (larger t<sub>PLH</sub>). A wider PMOS raises intrinsic node capacitance and can increase the NMOS pull-down delay t<sub>PHL</sub>. Timing here is a simplified <b>ideal-step estimate</b>, not SPICE.</p>
-    </section>
 
     <section class="calculations" aria-labelledby="calculations-title">
       <div class="section-heading"><div><div class="step-label">STEP 2 · CALCULATE AND EXPLAIN</div><h2 id="calculations-title">Three worked cases: equations and results</h2></div></div>
@@ -72,12 +71,13 @@
         <span>β<sub>p</sub>/β<sub>n</sub> = [μ<sub>p</sub>C<sub>ox</sub>(W<sub>p</sub>/L)] / [μ<sub>n</sub>C<sub>ox</sub>(W<sub>n</sub>/L)]</span>
         <span>V<sub>M</sub> = [V<sub>TN</sub> + √r (V<sub>DD</sub> − |V<sub>TP</sub>|)] / (1 + √r), where r = β<sub>p</sub>/β<sub>n</sub></span>
         <span>NM<sub>L</sub> = V<sub>IL</sub> − V<sub>OL</sub> · NM<sub>H</sub> = V<sub>OH</sub> − V<sub>IH</sub></span>
+        <span>C<sub>int</sub> dV<sub>out</sub>/dt = I<sub>p</sub> − I<sub>n</sub> · t<sub>r</sub> = t<sub>90% ↑</sub> − t<sub>10% ↑</sub> · t<sub>f</sub> = t<sub>10% ↓</sub> − t<sub>90% ↓</sub></span>
       </div>
       <div id="caseCards" class="case-grid" aria-live="polite"></div>
     </section>
 
     <section class="closing"><strong>Ask the class:</strong> If W<sub>p</sub> becomes larger while W<sub>n</sub> stays fixed, which way does V<sub>M</sub> move? Which noise margin shrinks? Which propagation delay increases?</section>
-    <footer>Educational square-law CMOS model, not a PDK-calibrated or silicon-measured result. V<sub>DD</sub> = 1.8 V; μ<sub>n</sub>C<sub>ox</sub> = 200 μA/V²; μ<sub>p</sub>C<sub>ox</sub> = 100 μA/V²; V<sub>TN</sub> = |V<sub>TP</sub>| = 0.4 V; L = 0.18 μm; λ = 0.06 V⁻¹. No external output load; assumed intrinsic capacitance C<sub>int</sub> = [0.8 + 0.85(W<sub>p</sub> + W<sub>n</sub>)] fF, widths in μm. Noise bounds use dV<sub>out</sub>/dV<sub>in</sub> = −1; delay uses C<sub>int</sub>∫dV/I for an ideal input step. All values are illustrative.</footer>
+    <footer>The classic textbook diagrams are original SVG renderings generated from this model, not textbook image reproductions. Propagation delay and 10–90% transition times are computed from the same intrinsic-capacitance model. Educational square-law CMOS model, not a PDK-calibrated or silicon-measured result. V<sub>DD</sub> = 1.8 V; μ<sub>n</sub>C<sub>ox</sub> = 200 μA/V²; μ<sub>p</sub>C<sub>ox</sub> = 100 μA/V²; V<sub>TN</sub> = |V<sub>TP</sub>| = 0.4 V; L = 0.18 μm; λ = 0.06 V⁻¹. No external output load; assumed intrinsic capacitance C<sub>int</sub> = [0.8 + 0.85(W<sub>p</sub> + W<sub>n</sub>)] fF, widths in μm. Noise bounds use dV<sub>out</sub>/dV<sub>in</sub> = −1; delay uses C<sub>int</sub>∫dV/I for an ideal input step. All values are illustrative.</footer>
   </main>
 </div>
 <script src="design-of-inverters.js"></script>

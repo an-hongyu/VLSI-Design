@@ -62,20 +62,53 @@
     }
     return {vil:roots[0],vih:roots[roots.length-1]};
   }
-  function delay(p,which){
-    const n=700,step=p.vdd/(2*n),cap=p.capFf*1e-15;
+
+  function buildEdgeProfile(p,kind){
+    // Exact same long-channel current laws as the DC model, with a fixed
+    // illustrative intrinsic node capacitor. Input is an ideal voltage step.
+    // Output charging or discharging is numerically integrated in voltage.
+    const n=1600, c=p.capFf*1e-15;
+    const pts=[{t:0,v:kind==='rise'?0:p.vdd}];
     let t=0;
     for(let i=0;i<n;i++){
-      const v=which==='rise'? (i+0.5)*step : p.vdd/2+(i+0.5)*step;
-      const current=which==='rise'?iP(0,v,p):iN(p.vdd,v,p);
-      t+=cap*step/Math.max(current,1e-15);
+      const v0=p.vdd*(kind==='rise'?i/n:1-i/n);
+      const v1=p.vdd*(kind==='rise'?(i+1)/n:1-(i+1)/n);
+      const mid=(v0+v1)/2;
+      const current=kind==='rise'?iP(0,mid,p):iN(p.vdd,mid,p);
+      t+=c*Math.abs(v1-v0)/Math.max(1e-19,current)*1e12;
+      pts.push({t,v:v1});
     }
-    return t*1e12;
+    return pts;
+  }
+  function timeAtVoltage(profile,target){
+    for(let i=1;i<profile.length;i++){
+      const a=profile[i-1],b=profile[i];
+      if((a.v-target)*(b.v-target)<=0){
+        return a.t+(b.t-a.t)*(target-a.v)/(b.v-a.v);
+      }
+    }
+    return NaN;
+  }
+  function sampleEdge(profile,time){
+    if(time<=0)return profile[0].v;
+    let lo=0,hi=profile.length-1;
+    while(hi-lo>1){const mid=(lo+hi)>>1;if(profile[mid].t<=time)lo=mid;else hi=mid;}
+    if(time>=profile[hi].t)return profile[hi].v;
+    const a=profile[lo],b=profile[hi];
+    return a.v+(b.v-a.v)*(time-a.t)/(b.t-a.t);
   }
   function calculate(wp){
     const p=makeParams(wp),b=noiseBounds(p);
-    return {...p,vm:solveVM(p),vil:b.vil,vih:b.vih,nml:b.vil,nmh:p.vdd-b.vih,
-      tplh:delay(p,'rise'),tphl:delay(p,'fall')};
+    const profileRise=buildEdgeProfile(p,'rise'),profileFall=buildEdgeProfile(p,'fall');
+    const V=p.vdd;
+    return {...p,vm:solveVM(p),vil:b.vil,vih:b.vih,nml:b.vil,nmh:V-b.vih,
+      tplh:timeAtVoltage(profileRise,.5*V),
+      tphl:timeAtVoltage(profileFall,.5*V),
+      tr:timeAtVoltage(profileRise,.9*V)-timeAtVoltage(profileRise,.1*V),
+      tf:timeAtVoltage(profileFall,.1*V)-timeAtVoltage(profileFall,.9*V),
+      riseT10:timeAtVoltage(profileRise,.1*V),riseT90:timeAtVoltage(profileRise,.9*V),
+      fallT90:timeAtVoltage(profileFall,.9*V),fallT10:timeAtVoltage(profileFall,.1*V),
+      profileRise,profileFall};
   }
   const DATA=CASES.map(c=>({...c,...calculate(c.wp)}));
   let selected='balanced';
@@ -110,91 +143,109 @@
     s+=txt(17,160,'Output voltage Vout (V)','class="axis-label" text-anchor="middle" transform="rotate(-90 17 160)"');
     return svgWrap(W,H,s);
   }
-  function noiseSvg(){
-    const W=650,H=335,x0=64,yTop=27,yBase=276,max=1;
-    const Y=v=>yBase-(v/max)*(yBase-yTop);
+
+  const svgText=(x,y,label,attributes='')=>txt(x,y,label,attributes);
+  function drawTimingDiagram(){
+    const d=DATA.find(x=>x.id===selected);
+    const W=670,H=307,x0=59,x1=651,t1=4,t2=22,tmax=37,V=d.vdd;
+    const X=t=>x0+(x1-x0)*t/tmax;
+    const Yi=v=>94-(v/V)*58;
+    const Yo=v=>245-(v/V)*87;
     let s='';
-    [0,.25,.5,.75,1].forEach(v=>{
-      const y=Y(v);
-      s+='<line x1="'+x0+'" y1="'+y+'" x2="633" y2="'+y+'" stroke="#e8eef3"/>';
-      s+=txt(x0-12,y+4,v.toFixed(2),'text-anchor="end" class="tick"');
-    });
-    const xs=[148,336,524];
-    DATA.forEach((d,i)=>{
-      const xc=xs[i],active=d.id===selected;
-      if(active)s+='<rect x="'+(xc-83)+'" y="'+(yTop-8)+'" width="166" height="'+(yBase-yTop+49)+'" rx="10" fill="'+d.color+'" opacity=".065"/>';
-      const pair=[{v:d.nml,color:'#3974c5',dx:-49},{v:d.nmh,color:'#a872cc',dx:5}];
-      pair.forEach(b=>{
-        const bx=xc+b.dx,by=Y(b.v),ht=yBase-by;
-        s+='<rect x="'+bx+'" y="'+by+'" width="43" height="'+ht+'" rx="3" fill="'+b.color+'" opacity="'+(active?1:.63)+'"/>';
-        s+=txt(bx+21.5,by-8,b.v.toFixed(3),'class="tick" text-anchor="middle" font-weight="'+(active?'800':'500')+'"');
-      });
-      s+=txt(xc,306,d.name.replace(' PMOS',''),'class="axis-label" text-anchor="middle"');
-    });
-    s+=txt(24,151,'Noise margin (V)','class="axis-label" transform="rotate(-90 24 151)" text-anchor="middle"');
-    return svgWrap(W,H,s);
-  }
-  function outputPoints(d,kind){
-    const V=d.vdd,dt=.025,maxT=13.5,at=1;
-    let v=kind==='fall'?V:0;
-    const points=[];
-    for(let i=0;i<=Math.round(maxT/dt);i++){
-      const t=i*dt;
-      if(i && t>at){
-        const vin=kind==='fall'?V:0;
-        const current=iP(vin,v,d)-iN(vin,v,d);
-        v=clamp(v+current*dt*1e-12/(d.capFf*1e-15),0,V);
-      }
-      points.push({t,v});
-    }
-    return points;
-  }
-  function scopeSvg(kind){
-    const d=DATA.find(x=>x.id===selected),V=d.vdd,del=kind==='fall'?d.tphl:d.tplh;
-    const W=640,H=265,x0=50,x1=621,tMax=13.5,tStep=1;
-    const X=t=>x0+(x1-x0)*t/tMax;
-    const topY=v=>89-(v/V)*57,botY=v=>226-(v/V)*71;
-    let s='';
-    [0,4,8,12].forEach(t=>{
+    const transitions=[
+      {name:'tₚHL',at:t1,kind:'fall',delay:d.tphl},
+      {name:'tₚLH',at:t2,kind:'rise',delay:d.tplh}
+    ];
+    for(const t of [0,5,10,15,20,25,30,35]){
       const x=X(t);
-      s+='<line x1="'+x+'" y1="24" x2="'+x+'" y2="227" stroke="#edf2f6"/>';
-      s+=txt(x,249,t.toFixed(0),'class="tick" text-anchor="middle"');
-    });
-    for(const frac of [0,.5,1]){
-      s+='<line x1="'+x0+'" y1="'+topY(V*frac)+'" x2="'+x1+'" y2="'+topY(V*frac)+'" stroke="#edf2f6"/>';
-      s+='<line x1="'+x0+'" y1="'+botY(V*frac)+'" x2="'+x1+'" y2="'+botY(V*frac)+'" stroke="#edf2f6"/>';
+      s+='<line x1="'+x+'" x2="'+x+'" y1="25" y2="246" stroke="#edf2f6"/>';
+      if(t%10===0)s+=svgText(x,278,String(t),'class="tick" text-anchor="middle"');
     }
-    s+=txt(15,58,'Vin','class="svg-title"')+txt(9,192,'Vout','class="svg-title"');
-    const vinStart=kind==='fall'?0:V,vinEnd=kind==='fall'?V:0;
-    s+='<path d="M '+X(0)+' '+topY(vinStart)+' L '+X(tStep)+' '+topY(vinStart)+' L '+X(tStep)+' '+topY(vinEnd)+' L '+X(tMax)+' '+topY(vinEnd)+'" stroke="#286bc2" stroke-width="3" fill="none"/>';
-    const pts=outputPoints(d,kind);
-    s+='<path d="'+line(pts,p=>X(p.t),p=>botY(p.v))+'" stroke="#df7448" stroke-width="3.2" fill="none"/>';
-    const a=X(tStep),b=X(tStep+del);
-    s+='<line x1="'+a+'" y1="23" x2="'+a+'" y2="229" stroke="#286bc2" stroke-dasharray="5 4" stroke-width="1.7"/>';
-    s+='<line x1="'+b+'" y1="23" x2="'+b+'" y2="229" stroke="#df7448" stroke-dasharray="5 4" stroke-width="1.7"/>';
-    s+='<line x1="'+x0+'" y1="'+botY(V/2)+'" x2="'+x1+'" y2="'+botY(V/2)+'" stroke="#b7c7d7" stroke-dasharray="3 4"/>';
-    s+='<circle cx="'+b+'" cy="'+botY(V/2)+'" r="5" fill="#df7448" stroke="white" stroke-width="1.3"/>';
-    s+=txt(a-4,16,'A','fill="#286bc2" font-size="12" font-weight="800" text-anchor="end"')+txt(b+5,16,'B','fill="#df7448" font-size="12" font-weight="800"');
-    const yArrow=124;
-    s+='<line x1="'+a+'" y1="'+yArrow+'" x2="'+b+'" y2="'+yArrow+'" stroke="#0b8580" stroke-width="2"/>';
-    s+='<path d="M '+a+' '+yArrow+' l 7 -4 l 0 8 Z M '+b+' '+yArrow+' l -7 -4 l 0 8 Z" fill="#0b8580"/>';
-    s+=txt((a+b)/2+11,113,f2(del)+' ps','fill="#08756d" text-anchor="middle" font-weight="800" font-size="13"');
-    s+=txt(345,262,'Time after input step (ps)','class="axis-label" text-anchor="middle"');
+    for(const level of [0,V/2,V]){
+      s+='<line x1="'+x0+'" x2="'+x1+'" y1="'+Yi(level)+'" y2="'+Yi(level)+'" stroke="#e9eef3"/>';
+      s+='<line x1="'+x0+'" x2="'+x1+'" y1="'+Yo(level)+'" y2="'+Yo(level)+'" stroke="#e9eef3"/>';
+    }
+    // Reference textbook style: two aligned voltage traces, with independent
+    // output switching events and 50% timing cursors.
+    s+=svgText(7,61,'Input','class="svg-title"')+svgText(4,202,'Output','class="svg-title"');
+    s+=svgText(16,Yi(V/2)+4,'50%','class="tick"')+svgText(16,Yo(V/2)+4,'50%','class="tick"');
+    s+='<path d="M '+X(0)+' '+Yi(0)+' L '+X(t1)+' '+Yi(0)+' L '+X(t1)+' '+Yi(V)+' L '+X(t2)+' '+Yi(V)+' L '+X(t2)+' '+Yi(0)+' L '+X(tmax)+' '+Yi(0)+'" fill="none" stroke="#286bc2" stroke-width="3.2" stroke-linejoin="round"/>';
+    const pts=Array.from({length:980},(_,i)=>{
+      const t=tmax*i/979;
+      const v=t<t1?V:t<t2?sampleEdge(d.profileFall,t-t1):sampleEdge(d.profileRise,t-t2);
+      return {t,v};
+    });
+    s+='<path d="'+line(pts,p=>X(p.t),p=>Yo(p.v))+'" fill="none" stroke="#df7448" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>';
+    for(const edge of transitions){
+      const a=X(edge.at),b=X(edge.at+edge.delay),yB=Yo(V/2);
+      s+='<line x1="'+a+'" x2="'+a+'" y1="22" y2="248" stroke="#286bc2" stroke-width="1.45" stroke-dasharray="6 4"/>';
+      s+='<line x1="'+b+'" x2="'+b+'" y1="22" y2="248" stroke="#df7448" stroke-width="1.45" stroke-dasharray="6 4"/>';
+      s+='<circle cx="'+a+'" cy="'+Yi(V/2)+'" r="4" fill="#286bc2" stroke="white" stroke-width="1.6"/>';
+      s+='<circle cx="'+b+'" cy="'+yB+'" r="4.5" fill="#df7448" stroke="white" stroke-width="1.6"/>';
+      const arrowY=133,delta=b-a,center=(a+b)/2;
+      s+='<line x1="'+a+'" x2="'+b+'" y1="'+arrowY+'" y2="'+arrowY+'" stroke="#087f79" stroke-width="2.5"/>';
+      if(delta>14)s+='<path d="M '+a+' '+arrowY+' l 8 -5 v 10 Z M '+b+' '+arrowY+' l -8 -5 v 10 Z" fill="#087f79"/>';
+      s+=svgText(center,121,edge.name+' = '+f2(edge.delay)+' ps','fill="#087f79" font-size="12" font-weight="800" text-anchor="middle"');
+    }
+    s+=svgText((x0+x1)/2,299,'Time (ps)','class="axis-label" text-anchor="middle"');
+    s+=svgText(645,18,'Blue: input 50% · Orange: output 50%','fill="#526f84" font-size="9.5" text-anchor="end"');
     return svgWrap(W,H,s);
   }
+  function drawTransitionDiagram(){
+    const d=DATA.find(x=>x.id===selected);
+    const W=670,H=251,x0=59,x1=651,y0=27,y1=189,t1=4,t2=21,tmax=38,V=d.vdd;
+    const X=t=>x0+(x1-x0)*t/tmax;
+    const Y=v=>y1-(y1-y0)*v/V;
+    let s='';
+    for(const frac of [.1,.9]){
+      const yy=Y(V*frac);
+      s+='<line x1="'+x0+'" x2="'+x1+'" y1="'+yy+'" y2="'+yy+'" stroke="#869aab" stroke-dasharray="7 5" stroke-width="1.35"/>';
+      s+=svgText(16,yy+4,(frac*100)+'%','class="svg-title"');
+    }
+    const pts=Array.from({length:960},(_,i)=>{
+      const t=tmax*i/959;
+      const v=t<t1?0:t<t2?sampleEdge(d.profileRise,t-t1):sampleEdge(d.profileFall,t-t2);
+      return {t,v};
+    });
+    s+='<path d="'+line(pts,p=>X(p.t),p=>Y(p.v))+'" stroke="#df7448" stroke-width="3.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>';
+    for(const def of [
+      {name:'tᵣ',start:t1+d.riseT10,end:t1+d.riseT90,value:d.tr},
+      {name:'t𝒇',start:t2+d.fallT90,end:t2+d.fallT10,value:d.tf}
+    ]){
+      const a=X(def.start),b=X(def.end);
+      s+='<line x1="'+a+'" x2="'+a+'" y1="'+y0+'" y2="214" stroke="#168a87" stroke-width="1.4" stroke-dasharray="5 4"/>';
+      s+='<line x1="'+b+'" x2="'+b+'" y1="'+y0+'" y2="214" stroke="#168a87" stroke-width="1.4" stroke-dasharray="5 4"/>';
+      s+='<line x1="'+a+'" x2="'+b+'" y1="211" y2="211" stroke="#168a87" stroke-width="2.3"/>';
+      if(b-a>14)s+='<path d="M '+a+' 211 l 7 -4 v 8 Z M '+b+' 211 l -7 -4 v 8 Z" fill="#168a87"/>';
+      s+=svgText((a+b)/2,201,def.name+' = '+f2(def.value)+' ps','fill="#08756d" font-size="12" font-weight="800" text-anchor="middle"');
+    }
+    for(const t of [0,10,20,30]){
+      const x=X(t);
+      s+=svgText(x,236,String(t),'class="tick" text-anchor="middle"');
+    }
+    s+=svgText(632,245,'Time (ps)','class="axis-label" text-anchor="end"');
+    s+=svgText(59,17,'Output voltage Vout','class="axis-label"');
+    return svgWrap(W,H,s);
+  }
+
   function caseCard(d){
     const r=f2(d.r),vm=f3(d.vm),vIL=f3(d.vil),vIH=f3(d.vih);
     const statement=d.id==='weak'?'LEFT VTC shift · reduced LOW noise margin · slower output rise':
-       d.id==='strong'?'RIGHT VTC shift · reduced HIGH noise margin · slower output fall':
-       'CENTERED VTC · nearly symmetric noise margins and delays';
+      d.id==='strong'?'RIGHT VTC shift · reduced HIGH noise margin · slower output fall':
+      'CENTERED VTC · nearly symmetric noise margins and transition times';
     return '<article class="case-card '+d.id+'-case'+(d.id===selected?' selected':'')+'" data-case-card="'+d.id+'">'+
       '<div class="case-top"><h3><span class="color-swatch '+d.id+'"></span> '+d.name+'</h3><span class="case-chip">Wp = '+f2(d.wp)+' μm</span></div>'+
       '<div class="eq"><strong>1 · Beta ratio</strong><div>βp/βn = (100 × '+f2(d.wp)+') / (200 × 0.90) = <strong>'+r+'</strong></div></div>'+
       '<div class="eq"><strong>2 · Switching point</strong><div>VM = [0.4 + √'+r+' × 1.4] / [1 + √'+r+'] = <strong>'+vm+' V</strong></div></div>'+
-      '<div class="eq"><strong>3 · Noise margins</strong><div>NML = '+vIL+' − 0 = <strong>'+f3(d.nml)+' V</strong></div><div>NMH = 1.800 − '+vIH+' = <strong>'+f3(d.nmh)+' V</strong></div></div>'+
-      '<div class="eq"><strong>4 · Intrinsic delay</strong><div>Cint = 0.8 + 0.85('+f2(d.wp)+' + 0.90) = '+f2(d.capFf)+' fF</div>'+
-      '<div>tPLH = Cint ∫ dV / Ip = <strong>'+f2(d.tplh)+' ps</strong></div><div>tPHL = Cint ∫ dV / In = <strong>'+f2(d.tphl)+' ps</strong></div></div>'+
-      '<div class="results"><div>VM <b>'+vm+' V</b></div><div>βp/βn <b>'+r+'</b></div><div>NML <b>'+f3(d.nml)+' V</b></div><div>NMH <b>'+f3(d.nmh)+' V</b></div><div>tPLH <b>'+f2(d.tplh)+' ps</b></div><div>tPHL <b>'+f2(d.tphl)+' ps</b></div></div>'+
+      '<div class="eq"><strong>3 · Noise margins (values retained)</strong><div>NML = '+vIL+' − 0 = <strong>'+f3(d.nml)+' V</strong></div><div>NMH = 1.800 − '+vIH+' = <strong>'+f3(d.nmh)+' V</strong></div></div>'+
+      '<div class="eq timing-eq"><strong>4 · Delay and transition time</strong><div>Cint = 0.8 + 0.85('+f2(d.wp)+' + 0.90) = '+f2(d.capFf)+' fF</div>'+
+      '<div>tpHL = t(B↓50%) − t(A↑50%) = <strong>'+f2(d.tphl)+' ps</strong></div>'+
+      '<div>tpLH = t(B↑50%) − t(A↓50%) = <strong>'+f2(d.tplh)+' ps</strong></div>'+
+      '<div>tr = t(Vout↑90%) − t(Vout↑10%) = <strong>'+f2(d.tr)+' ps</strong></div>'+
+      '<div>tf = t(Vout↓10%) − t(Vout↓90%) = <strong>'+f2(d.tf)+' ps</strong></div></div>'+
+      '<div class="results"><div>VM <b>'+vm+' V</b></div><div>βp/βn <b>'+r+'</b></div><div>NML <b>'+f3(d.nml)+' V</b></div><div>NMH <b>'+f3(d.nmh)+' V</b></div>'+
+      '<div>tpHL <b>'+f2(d.tphl)+' ps</b></div><div>tpLH <b>'+f2(d.tplh)+' ps</b></div>'+
+      '<div>tr <b>'+f2(d.tr)+' ps</b></div><div>tf <b>'+f2(d.tf)+' ps</b></div></div>'+
       '<p class="case-summary">'+statement+'</p></article>';
   }
   function select(id){
@@ -203,11 +254,9 @@
     document.querySelectorAll('button[data-case]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.case===id)));
     $('selectedTakeaway').textContent=d.short+' Selected: Wp = '+f2(d.wp)+' μm, VM = '+f3(d.vm)+' V.';
     $('vtcChart').innerHTML=vtcSvg();
-    $('noiseChart').innerHTML=noiseSvg();
-    $('fallChart').innerHTML=scopeSvg('fall');
-    $('riseChart').innerHTML=scopeSvg('rise');
-    $('fallDelay').textContent='tPHL = '+f2(d.tphl)+' ps · Output discharging';
-    $('riseDelay').textContent='tPLH = '+f2(d.tplh)+' ps · Output charging';
+    $('delayChart').innerHTML=drawTimingDiagram();
+    $('transitionChart').innerHTML=drawTransitionDiagram();
+    $('dynamicReadout').textContent=d.name+': tpHL = '+f2(d.tphl)+' ps · tpLH = '+f2(d.tplh)+' ps · tr = '+f2(d.tr)+' ps · tf = '+f2(d.tf)+' ps';
     $('caseCards').innerHTML=DATA.map(caseCard).join('');
     announceHeight();
   }
